@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade Average Calculator</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="gradeCalculator.js" defer></script>
+</head>
+<body>
+    <form id="gradeForm" novalidate> <!-- Disable native validation -->
+        <h1>Grade Average Calculator</h1>
+
+        <div id="weightInputs">
+            <label for="weightName">Weight Name:</label>
+            <input type="text" id="weightName">
+            <label for="weightPercent">Weight Percent:</label>
+            <input type="text" id="weightPercent">
+            <button type="button" id="addWeight">Add Weight</button>
+        </div>
+
+        <ul id="weightList"></ul>
+
+        <button type="button" id="addGrade">Add Grade</button>
+        <div id="gradesContainer"></div>
+
+        <label for="gradingScale">Choose grading scale:</label>
+        <select id="gradingScale">
+            <option value="normal">Normal</option>
+            <option value="noMinuses">No Minuses</option>
+            <option value="noPlusesMinuses">No Pluses or Minuses</option>
+        </select>
+
+        <button type="submit">Calculate Average</button>
+    </form>
+    <div id="result"></div>
+</body>
+</html>
