@@ -1,87 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&display=swap');
+
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     max-width: 800px;
     margin: 20px auto;
     padding: 0 20px;
-    background-color: #f4f4f4;
-}
-
-.calculator-section {
-    background: white;
-    padding: 20px;
-    margin: 20px 0;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background-color: #f7f9fc;
+    color: #333;
 }
 
 h1, h2 {
-    color: #333;
+    color: #222;
+    text-align: center;
+}
+
+.calculator-section {
+    background: #ffffff;
+    padding: 30px;
+    margin: 20px 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s;
+}
+
+.calculator-section:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
 .tab-buttons {
     display: flex;
     gap: 10px;
+    justify-content: center;
     margin-bottom: 20px;
 }
 
 .tab-button {
-    padding: 10px 20px;
+    padding: 12px 25px;
     border: none;
-    background: #ddd;
+    background: #e0e0e0;
     cursor: pointer;
     border-radius: 5px;
+    font-weight: 500;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .tab-button.active {
-    background: #0066cc;
-    color: white;
+    background: #4e89f0;
+    color: #ffffff;
+}
+
+.tab-button:hover {
+    background: #b3c7e6;
 }
 
 input, select {
     width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #dddddd;
+    border-radius: 5px;
+    transition: border-color 0.3s;
+}
+
+input:focus, select:focus {
+    border-color: #4e89f0;
+    outline: none;
 }
 
 button {
-    padding: 10px 20px;
-    background: #0066cc;
+    padding: 12px 25px;
+    background: #4e89f0;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     margin: 5px 0;
+    font-weight: 500;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
 button:hover {
-    background: #0052a3;
+    background: #3c76d0;
+    transform: translateY(-1px);
 }
 
 #canvasInput {
     width: 100%;
     height: 200px;
     margin-bottom: 20px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 15px;
+    border: 1px solid #dddddd;
+    border-radius: 5px;
+    transition: border-color 0.3s;
+}
+
+#canvasInput:focus {
+    border-color: #4e89f0;
+    outline: none;
 }
 
 #result {
     white-space: pre-line;
-    font-family: monospace;
+    font-family: 'Space Grotesk', monospace;
     background: #f5f5f5;
     padding: 20px;
     border-radius: 5px;
     margin-top: 20px;
+    border-left: 5px solid #4e89f0;
 }
 
 .grade-input {
-    margin-bottom: 10px;
-    padding: 10px;
+    margin-bottom: 15px;
+    padding: 15px;
     background: #f9f9f9;
-    border-radius: 4px;
+    border-radius: 5px;
+    border-left: 3px solid #4e89f0;
 }
 
 #weightList {
@@ -91,4 +124,9 @@ button:hover {
 
 #weightList li {
     padding: 5px 0;
+    transition: color 0.3s;
+}
+
+#weightList li:hover {
+    color: #4e89f0;
 }
