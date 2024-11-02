@@ -32,49 +32,38 @@ $(document).ready(function() {
 
     $('#gradeForm').on('submit', function(event) {
         event.preventDefault();
-
-        let allFieldsFilled = true;
-        $('.gradeField').each(function(index) {
-            const gradeValue = $(this).val();
-            const weightValue = $('.weightSelect').eq(index).val();
-
-            if (!gradeValue || !weightValue) {
-                alert('Please fill out both the grade and weight for each entry.');
-                allFieldsFilled = false;
-                return false;
-            }
-        });
-
-        if (!allFieldsFilled) return;
-
-        const gradingScale = $('#gradingScale').val();
-        let totalWeightedScore = 0;
-        let totalWeight = 0;
-
+        
+        const weightCategories = {};
+        
+        // First, group grades by weight category
         $('.gradeField').each(function(index) {
             const gradeInput = $(this).val().toUpperCase();
             const weightName = $('.weightSelect').eq(index).val();
-            const weightPercent = weights.find(w => w.name === weightName)?.percent || 0;
-            const gradeValue = isNaN(gradeInput) ? letterToNumber(gradeInput) : Number(gradeInput);
-
-            if (!isNaN(gradeValue) && weightPercent > 0) {
-                totalWeightedScore += gradeValue * (weightPercent / 100);
-                totalWeight += weightPercent;
+            const weight = weights.find(w => w.name === weightName);
+            
+            if (!weightCategories[weightName]) {
+                weightCategories[weightName] = {
+                    grades: [],
+                    totalWeight: weight.percent
+                };
             }
+            
+            const gradeValue = isNaN(gradeInput) ? letterToNumber(gradeInput) : Number(gradeInput);
+            weightCategories[weightName].grades.push(gradeValue);
         });
-
-        const average = totalWeight ? totalWeightedScore / (totalWeight / 100) : 0;
-        let letterGrade = '';
         
-        if (gradingScale === 'normal') {
-            letterGrade = getNormalGrade(average);
-        } else if (gradingScale === 'noMinuses') {
-            letterGrade = getNoMinusesGrade(average);
-        } else if (gradingScale === 'noPlusesMinuses') {
-            letterGrade = getNoPlusesMinusesGrade(average);
-        }
-
-        $('#result').text(`Weighted Average: ${average.toFixed(2)}, Letter Grade: ${letterGrade}`);
+        let finalGrade = 0;
+        
+        // Calculate each grade's contribution to its category
+        Object.entries(weightCategories).forEach(([category, data]) => {
+            const weightPerGrade = data.totalWeight / data.grades.length;
+            data.grades.forEach(grade => {
+                finalGrade += (grade * weightPerGrade / 100);
+            });
+        });
+        
+        const letterGrade = getNormalGrade(finalGrade);
+        $('#result').text(`Weighted Average: ${finalGrade.toFixed(2)}, Letter Grade: ${letterGrade}`);
     });
 
     function letterToNumber(letter) {
