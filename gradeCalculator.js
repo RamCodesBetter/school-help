@@ -33,36 +33,46 @@ $(document).ready(function() {
     $('#gradeForm').on('submit', function(event) {
         event.preventDefault();
         
-        // Create an object to store grades by category
-        const gradesByCategory = {};
+        // Debug logging
+        console.log("Starting grade calculations...");
         
-        // Group all grades by their weight category
+        const categories = {};
+        let finalGrade = 0;
+        
+        // First pass: Group grades by category and log them
         $('.gradeField').each(function(index) {
             const grade = parseFloat($(this).val()) || 0;
             const weightName = $('.weightSelect').eq(index).val();
-            if (!gradesByCategory[weightName]) {
-                gradesByCategory[weightName] = [];
+            const weight = weights.find(w => w.name === weightName)?.percent || 0;
+            
+            console.log(`Grade entry: ${grade} in category ${weightName} (weight: ${weight}%)`);
+            
+            if (!categories[weightName]) {
+                categories[weightName] = {
+                    grades: [],
+                    weight: weight
+                };
             }
-            gradesByCategory[weightName].push(grade);
+            categories[weightName].grades.push(grade);
         });
         
-        let finalGrade = 0;
+        // Second pass: Calculate each category's contribution
+        Object.entries(categories).forEach(([name, data]) => {
+            const categoryAverage = data.grades.reduce((sum, grade) => sum + grade, 0) / data.grades.length;
+            const contribution = (categoryAverage * data.weight) / 100;
+            console.log(`Category ${name}:`);
+            console.log(`- Grades: ${data.grades.join(', ')}`);
+            console.log(`- Weight: ${data.weight}%`);
+            console.log(`- Average: ${categoryAverage}`);
+            console.log(`- Contribution: ${contribution}`);
+            finalGrade += contribution;
+        });
         
-        // Calculate contribution for each grade
-        for (const [category, categoryGrades] of Object.entries(gradesByCategory)) {
-            const weight = weights.find(w => w.name === category).percent;
-            const weightPerGrade = (weight / categoryGrades.length) / 100;
-            
-            categoryGrades.forEach(grade => {
-                // Use precise decimal calculation
-                finalGrade += Number((grade * weightPerGrade).toFixed(4));
-            });
-        }
+        console.log(`Final grade: ${finalGrade}`);
         
-        // Round final grade to 2 decimal places
-        finalGrade = Number(finalGrade.toFixed(2));
-        
+        finalGrade = Math.round(finalGrade * 100) / 100;
         const letterGrade = getNormalGrade(finalGrade);
+        
         $('#result').text(`Weighted Average: ${finalGrade}, Letter Grade: ${letterGrade}`);
     });
 
