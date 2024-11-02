@@ -1,32 +1,39 @@
 $(document).ready(function() {
     const weights = [];
+    console.log("Document is ready.");
 
     // Show Tab Function
     function showTab(tabName) {
+        console.log(`Switching to tab: ${tabName}`);
         $('.tab-button').removeClass('active');
         $(`#${tabName}Button`).addClass('active');
         
         if (tabName === 'manual') {
             $('#manualSection').show();
             $('#canvasSection').hide();
+            console.log("Showing manual section.");
         } else {
             $('#manualSection').hide();
             $('#canvasSection').show();
+            console.log("Showing canvas section.");
         }
     }
 
     // Event Listeners for Tabs
     $('#manualButton').on('click', function() {
+        console.log("Manual button clicked.");
         showTab('manual');
     });
 
     $('#canvasButton').on('click', function() {
+        console.log("Canvas button clicked.");
         showTab('canvas');
     });
 
     // Process Canvas Grades
     $('#processCanvas').on('click', function() {
-        const content = $('#canvasInput').value;
+        const content = $('#canvasInput').val(); 
+        console.log("Processing canvas grades with content:", content);
     
         const categories = {};
         
@@ -38,22 +45,27 @@ $(document).ready(function() {
             const categoryName = match[1].trim();
             const earned = parseFloat(match[2]);
             const total = parseFloat(match[3]);
-    
+            console.log(`Found category: ${categoryName}, Earned: ${earned}, Total: ${total}`);
+
             if (total > 0) {
                 categories[categoryName] = {
                     earned,
                     total,
                     percentage: (earned / total * 100).toFixed(2)
                 };
+                console.log(`Added category data:`, categories[categoryName]);
+            } else {
+                console.warn(`Total for category "${categoryName}" is not greater than 0.`);
             }
         }
         
         // Pattern to extract the overall total percentage
         const totalMatch = /Total:\s*(\d+(?:\.\d+)?%)/i.exec(content);
         const totalPercentage = totalMatch ? totalMatch[1] : "N/A";
+        console.log(`Overall total percentage found: ${totalPercentage}`);
         
         let output = '';
-    
+
         // Display each dynamically detected category
         Object.entries(categories).forEach(([name, data]) => {
             output += `${name}:\n`;
@@ -64,13 +76,15 @@ $(document).ready(function() {
         // Append overall total
         output += `Total: ${totalPercentage}`;
         
-        $('#result').textContent = output;
+        $('#result').html(output.replace(/\n/g, '<br>'));
+        console.log("Output generated for canvas grades:\n", output);
     });
 
     // Add Weight
     $('#addWeight').on('click', function() {
         const weightName = $('#weightName').val();
         const weightPercent = parseFloat($('#weightPercent').val());
+        console.log("Adding weight:", weightName, weightPercent);
 
         if (weightName && !isNaN(weightPercent) && weightPercent > 0) {
             weights.push({ name: weightName, percent: weightPercent });
@@ -80,13 +94,16 @@ $(document).ready(function() {
             });
             $('#weightName').val('');
             $('#weightPercent').val('');
+            console.log(`Weight added successfully: ${weightName} - ${weightPercent}%`);
         } else {
+            console.error('Invalid weight input.');
             alert('Please enter a valid weight name and percent.');
         }
     });
 
     // Add Grade
     $('#addGrade').on('click', function() {
+        console.log("Adding a new grade input.");
         $('#gradesContainer').append(`
             <div class="grade-input">
                 <input type="text" class="gradeNameField" placeholder="Assignment Name">
@@ -100,6 +117,7 @@ $(document).ready(function() {
     });
 
     function parseFraction(input) {
+        console.log(`Parsing fraction from input: "${input}"`);
         if (!input || input.trim() === '') return NaN;
         if (!isNaN(input)) return parseFloat(input);
 
@@ -109,6 +127,7 @@ $(document).ready(function() {
             const denominator = parseFloat(parts[1].trim());
             
             if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+                console.log(`Parsed fraction: ${numerator}/${denominator}`);
                 return {
                     percentage: (numerator / denominator) * 100,
                     earned: numerator,
@@ -116,12 +135,14 @@ $(document).ready(function() {
                 };
             }
         }
+        console.warn(`Failed to parse fraction for input: "${input}"`);
         return NaN;
     }
 
     // Grade Calculation
     $('#gradeForm').on('submit', function(event) {
         event.preventDefault();
+        console.log("Calculating grades...");
 
         const categories = {};
         let finalGrade = 0;
@@ -132,9 +153,11 @@ $(document).ready(function() {
             const assignmentName = $('.gradeNameField').eq(index).val().trim();
             const gradeInput = $(this).val().trim();
             const weightName = $('.weightSelect').eq(index).val();
+            console.log(`Processing grade entry ${index + 1}: Name="${assignmentName}", Input="${gradeInput}", Weight="${weightName}"`);
 
             if (!gradeInput || !weightName) {
                 alert('Please fill out the grade and weight for each entry.');
+                console.error('Grade or weight not provided for entry:', index + 1);
                 allValid = false;
                 return false;
             }
@@ -142,6 +165,7 @@ $(document).ready(function() {
             const score = parseFraction(gradeInput);
             if (!score || typeof score !== 'object') {
                 alert(`Invalid grade format: "${gradeInput}". Please use a fraction (e.g. 29/30)`);
+                console.error(`Invalid grade format for input: "${gradeInput}"`);
                 allValid = false;
                 return false;
             }
@@ -153,6 +177,7 @@ $(document).ready(function() {
                     totalEarned: 0,
                     totalPossible: 0
                 };
+                console.log(`Initialized category "${weightName}" with weight ${categories[weightName].weight}`);
             }
             
             categories[weightName].grades.push({
@@ -161,6 +186,8 @@ $(document).ready(function() {
             });
             categories[weightName].totalEarned += score.earned;
             categories[weightName].totalPossible += score.total;
+
+            console.log(`Updated category "${weightName}": Total Earned=${categories[weightName].totalEarned}, Total Possible=${categories[weightName].totalPossible}`);
         });
 
         if (!allValid) return;
@@ -174,11 +201,13 @@ $(document).ready(function() {
             summary += `${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}\n\n`;
             
             finalGrade += contribution;
+            console.log(`Category "${name}" contributes ${contribution.toFixed(2)}% to final grade.`);
         });
 
         finalGrade = Number(finalGrade.toFixed(2));
         
         summary += `Total: ${finalGrade}%`;
+        console.log("Final grade calculated:", finalGrade);
         
         $('#result').html(summary.replace(/\n/g, '<br>'));
     });
