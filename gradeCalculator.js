@@ -33,37 +33,37 @@ $(document).ready(function() {
     $('#gradeForm').on('submit', function(event) {
         event.preventDefault();
         
-        const weightCategories = {};
+        // Create an object to store grades by category
+        const gradesByCategory = {};
         
-        // First, group grades by weight category
+        // Group all grades by their weight category
         $('.gradeField').each(function(index) {
-            const gradeInput = $(this).val().toUpperCase();
+            const grade = parseFloat($(this).val()) || 0;
             const weightName = $('.weightSelect').eq(index).val();
-            const weight = weights.find(w => w.name === weightName);
-            
-            if (!weightCategories[weightName]) {
-                weightCategories[weightName] = {
-                    grades: [],
-                    totalWeight: weight.percent
-                };
+            if (!gradesByCategory[weightName]) {
+                gradesByCategory[weightName] = [];
             }
-            
-            const gradeValue = isNaN(gradeInput) ? letterToNumber(gradeInput) : Number(gradeInput);
-            weightCategories[weightName].grades.push(gradeValue);
+            gradesByCategory[weightName].push(grade);
         });
         
         let finalGrade = 0;
         
-        // Calculate each grade's contribution to its category
-        Object.entries(weightCategories).forEach(([category, data]) => {
-            const weightPerGrade = data.totalWeight / data.grades.length;
-            data.grades.forEach(grade => {
-                finalGrade += (grade * weightPerGrade / 100);
+        // Calculate contribution for each grade
+        for (const [category, categoryGrades] of Object.entries(gradesByCategory)) {
+            const weight = weights.find(w => w.name === category).percent;
+            const weightPerGrade = (weight / categoryGrades.length) / 100;
+            
+            categoryGrades.forEach(grade => {
+                // Use precise decimal calculation
+                finalGrade += Number((grade * weightPerGrade).toFixed(4));
             });
-        });
+        }
+        
+        // Round final grade to 2 decimal places
+        finalGrade = Number(finalGrade.toFixed(2));
         
         const letterGrade = getNormalGrade(finalGrade);
-        $('#result').text(`Weighted Average: ${finalGrade.toFixed(2)}, Letter Grade: ${letterGrade}`);
+        $('#result').text(`Weighted Average: ${finalGrade}, Letter Grade: ${letterGrade}`);
     });
 
     function letterToNumber(letter) {
