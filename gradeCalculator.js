@@ -26,16 +26,19 @@ $(document).ready(function() {
 
     // Process Canvas Grades
     $('#processCanvas').on('click', function() {
-        const content = $('#canvasInput').val();
+        const content = $('#canvasInput').value;
+    
         const categories = {};
-        const categoryPattern = /(Assignments|Formative|Summative|Homework)\s+(?:\d+(?:\.\d+)?%\s+)?(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/g;
+        
+        // General pattern to capture any category with a score in the format "CategoryName ... xx.xx / xx.xx"
+        const categoryPattern = /([\w\s]+?)\s+(?:\d+(?:\.\d+)?%\s+)?(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/g;
         let match;
         
         while ((match = categoryPattern.exec(content)) !== null) {
-            const categoryName = match[1];
+            const categoryName = match[1].trim();
             const earned = parseFloat(match[2]);
             const total = parseFloat(match[3]);
-            
+    
             if (total > 0) {
                 categories[categoryName] = {
                     earned,
@@ -45,20 +48,23 @@ $(document).ready(function() {
             }
         }
         
+        // Pattern to extract the overall total percentage
         const totalMatch = /Total:\s*(\d+(?:\.\d+)?%)/i.exec(content);
         const totalPercentage = totalMatch ? totalMatch[1] : "N/A";
         
         let output = '';
-        $.each(categories, function(name, data) {
-            if (name !== 'Assignments') {
-                output += `${name}:\n`;
-                output += `${data.percentage}%\n`;
-                output += `${data.earned.toFixed(2)} / ${data.total.toFixed(2)}\n\n`;
-            }
+    
+        // Display each dynamically detected category
+        Object.entries(categories).forEach(([name, data]) => {
+            output += `${name}:\n`;
+            output += `${data.percentage}%\n`;
+            output += `${data.earned.toFixed(2)} / ${data.total.toFixed(2)}\n\n`;
         });
         
+        // Append overall total
         output += `Total: ${totalPercentage}`;
-        $('#result').text(output);
+        
+        $('#result').textContent = output;
     });
 
     // Add Weight
