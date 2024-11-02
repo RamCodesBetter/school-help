@@ -10,38 +10,67 @@
 <body>
     <h1>Grade Calculator</h1>
     
-    <div class="tab-buttons">
-        <button id="manualButton" class="tab-button active">Manual Entry</button>
-        <button id="canvasButton" class="tab-button">Canvas Parser</button>
-    </div>
-
-    <div id="manualSection" class="calculator-section">
-        <h2>Manual Grade Entry</h2>
-        <form id="gradeForm" novalidate>
-            <div id="weightInputs">
-                <label for="weightName">Weight Name:</label>
-                <input type="text" id="weightName">
-                <label for="weightPercent">Weight Percent:</label>
-                <input type="text" id="weightPercent">
-                <button type="button" id="addWeight">Add Weight</button>
+    <div class="main-container">
+        <div class="left-section">
+            <div class="tab-buttons">
+                <button id="manualButton" class="tab-button active">Manual Entry</button>
+                <button id="canvasButton" class="tab-button">Canvas Parser</button>
             </div>
 
-            <ul id="weightList"></ul>
+            <div id="manualSection" class="calculator-section">
+                <h2>Manual Grade Entry</h2>
+                <form id="gradeForm" novalidate>
+                    <div id="weightInputs">
+                        <label for="weightName">Weight Name:</label>
+                        <input type="text" id="weightName">
+                        <label for="weightPercent">Weight Percent:</label>
+                        <input type="text" id="weightPercent">
+                        <button type="button" id="addWeight">Add Weight</button>
+                    </div>
 
-            <button type="button" id="addGrade">Add Grade</button>
-            <div id="gradesContainer"></div>
+                    <ul id="weightList"></ul>
+                    
+                    <div id="categoryContainer">
+                        <!-- Categories and assignments will be dynamically added here -->
+                    </div>
 
-            <button type="submit">Calculate Average</button>
-        </form>
+                    <button type="submit">Calculate Average</button>
+                </form>
+            </div>
+
+            <div id="canvasSection" class="calculator-section" style="display: none;">
+                <h2>Canvas Grade Parser</h2>
+                <textarea id="canvasInput" placeholder="Paste your entire Canvas grade page content here..."></textarea>
+                <button id="processCanvas">Process Grades</button>
+            </div>
+        </div>
+
+        <div class="right-section">
+            <div id="totalGrade">
+                <h2>Total Grade</h2>
+                <p id="finalGrade">Total: --%</p>
+            </div>
+            
+            <div id="weightSidebar">
+                <h2>Weights</h2>
+                <ul id="weightSidebarList">
+                    <!-- Weight list dynamically generated here -->
+                </ul>
+                <button type="button" id="addCategoryButton">Add Category</button>
+            </div>
+
+            <div id="pointsCalculator">
+                <h2>Calculate Points</h2>
+                <label for="assignmentPoints">New Assignment Points:</label>
+                <input type="text" id="assignmentPoints">
+                <label for="targetGrade">Target Grade Percentage:</label>
+                <input type="text" id="targetGrade">
+                <label for="categorySelect">Category:</label>
+                <select id="categorySelect"></select>
+                <p>Points needed: <span id="pointsNeeded">-- pts (--%)</span></p>
+            </div>
+        </div>
     </div>
-
-    <div id="canvasSection" class="calculator-section" style="display: none;">
-        <h2>Canvas Grade Parser</h2>
-        <textarea id="canvasInput" placeholder="Paste your entire Canvas grade page content here..."></textarea>
-        <button id="processCanvas">Process Grades</button>
-    </div>
-
-    <div id="result"></div>
 
     <script src="gradeCalculator.js"></script>
 </body>
