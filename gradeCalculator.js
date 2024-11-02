@@ -21,7 +21,7 @@ $(document).ready(function() {
     $('#addGrade').on('click', function() {
         $('#gradesContainer').append(`
             <div class="grade-input">
-                <input type="text" class="gradeField" placeholder="Enter Grade">
+                <input type="text" class="gradeField" placeholder="Score (e.g. 26/30 or 95)">
                 <select class="weightSelect">
                     <option value="">Select Weight</option>
                     ${weights.map(w => `<option value="${w.name}">${w.name}</option>`).join('')}
@@ -30,59 +30,85 @@ $(document).ready(function() {
         `);
     });
 
+    function parseFraction(input) {
+        // Handle empty input
+        if (!input || input.trim() === '') return NaN;
+
+        // If it's already a number, return it
+        if (!isNaN(input)) return parseFloat(input);
+
+        // Try to parse as a fraction
+        const parts = input.split('/');
+        if (parts.length === 2) {
+            const numerator = parseFloat(parts[0].trim());
+            const denominator = parseFloat(parts[1].trim());
+            
+            // Check for valid numbers
+            if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+                return (numerator / denominator) * 100;
+            }
+        }
+
+        return NaN;
+    }
+
     $('#gradeForm').on('submit', function(event) {
         event.preventDefault();
-        
-        // Debug logging
-        console.log("Starting grade calculations...");
-        
+
         const categories = {};
         let finalGrade = 0;
-        
-        // First pass: Group grades by category and log them
+
+        // Validate and collect all grades
+        let allValid = true;
         $('.gradeField').each(function(index) {
-            const grade = parseFloat($(this).val()) || 0;
+            const gradeInput = $(this).val().trim();
             const weightName = $('.weightSelect').eq(index).val();
-            const weight = weights.find(w => w.name === weightName)?.percent || 0;
-            
-            console.log(`Grade entry: ${grade} in category ${weightName} (weight: ${weight}%)`);
-            
+
+            if (!gradeInput || !weightName) {
+                alert('Please fill out both the grade and weight for each entry.');
+                allValid = false;
+                return false;
+            }
+
+            const percentage = parseFraction(gradeInput);
+            if (isNaN(percentage)) {
+                alert(`Invalid grade format: "${gradeInput}". Please use either a number (e.g. 95) or a fraction (e.g. 26/30)`);
+                allValid = false;
+                return false;
+            }
+
+            // Group grades by category
             if (!categories[weightName]) {
                 categories[weightName] = {
                     grades: [],
-                    weight: weight
+                    weight: weights.find(w => w.name === weightName)?.percent || 0
                 };
             }
-            categories[weightName].grades.push(grade);
+            categories[weightName].grades.push(percentage);
         });
-        
-        // Second pass: Calculate each category's contribution
+
+        if (!allValid) return;
+
+        // Calculate final grade
         Object.entries(categories).forEach(([name, data]) => {
-            const categoryAverage = data.grades.reduce((sum, grade) => sum + grade, 0) / data.grades.length;
-            const contribution = (categoryAverage * data.weight) / 100;
+            const sum = data.grades.reduce((acc, grade) => acc + grade, 0);
+            const average = Number((sum / data.grades.length).toFixed(4));
+            const contribution = Number((average * data.weight / 100).toFixed(4));
+            
             console.log(`Category ${name}:`);
             console.log(`- Grades: ${data.grades.join(', ')}`);
             console.log(`- Weight: ${data.weight}%`);
-            console.log(`- Average: ${categoryAverage}`);
+            console.log(`- Average: ${average}`);
             console.log(`- Contribution: ${contribution}`);
+            
             finalGrade += contribution;
         });
-        
-        console.log(`Final grade: ${finalGrade}`);
-        
-        finalGrade = Math.round(finalGrade * 100) / 100;
+
+        finalGrade = Number(finalGrade.toFixed(2));
         const letterGrade = getNormalGrade(finalGrade);
         
         $('#result').text(`Weighted Average: ${finalGrade}, Letter Grade: ${letterGrade}`);
     });
-
-    function letterToNumber(letter) {
-        const letterMapping = {
-            'A': 95, 'A-': 90, 'B+': 87, 'B': 85, 'B-': 80,
-            'C+': 77, 'C': 75, 'C-': 70, 'D+': 67, 'D': 65, 'F': 50
-        };
-        return letterMapping[letter] || NaN;
-    }
 
     function getNormalGrade(average) {
         if (average >= 93) return 'A';
@@ -94,25 +120,6 @@ $(document).ready(function() {
         else if (average >= 73) return 'C';
         else if (average >= 70) return 'C-';
         else if (average >= 67) return 'D+';
-        else if (average >= 60) return 'D';
-        else return 'F';
-    }
-
-    function getNoMinusesGrade(average) {
-        if (average >= 90) return 'A';
-        else if (average >= 87) return 'B+';
-        else if (average >= 80) return 'B';
-        else if (average >= 77) return 'C+';
-        else if (average >= 70) return 'C';
-        else if (average >= 67) return 'D+';
-        else if (average >= 60) return 'D';
-        else return 'F';
-    }
-
-    function getNoPlusesMinusesGrade(average) {
-        if (average >= 90) return 'A';
-        else if (average >= 80) return 'B';
-        else if (average >= 70) return 'C';
         else if (average >= 60) return 'D';
         else return 'F';
     }
