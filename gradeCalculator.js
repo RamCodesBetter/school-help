@@ -97,42 +97,20 @@ $(document).ready(function() {
 
         if (!allValid) return;
 
-        // Build summary in Canvas format
-        summary = "**Assignments are weighted by group:**\n\n";
-        
+        // Build summary in the requested format
         Object.entries(categories).forEach(([name, data]) => {
             const categoryPercentage = (data.totalEarned / data.totalPossible) * 100;
             const contribution = categoryPercentage * (data.weight / 100);
             
-            summary += `**${name}** ${data.weight}%\n`;
-            summary += `Category Score: ${data.totalEarned}/${data.totalPossible} (${categoryPercentage.toFixed(2)}%)\n`;
-            data.grades.forEach(grade => {
-                summary += `- ${grade.name}: ${grade.score.earned}/${grade.score.total}\n`;
-            });
-            summary += `Contribution: ${contribution.toFixed(2)}\n\n`;
+            summary += `**${name}** **${categoryPercentage.toFixed(2)}%** **${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}**  `;
             
             finalGrade += contribution;
         });
 
         finalGrade = Number(finalGrade.toFixed(2));
-        const letterGrade = getNormalGrade(finalGrade);
         
-        summary += `**Total** ${finalGrade}% (${letterGrade})`;
+        summary += `**Total** **${finalGrade}%**`;
         
-        $('#result').html(summary.replace(/\n/g, '<br>'));
+        $('#result').html(summary.replace(/\*\*/g, '').replace(/  /g, '<br>'));
     });
-
-    function getNormalGrade(average) {
-        if (average >= 93) return 'A';
-        else if (average >= 90) return 'A-';
-        else if (average >= 87) return 'B+';
-        else if (average >= 83) return 'B';
-        else if (average >= 80) return 'B-';
-        else if (average >= 77) return 'C+';
-        else if (average >= 73) return 'C';
-        else if (average >= 70) return 'C-';
-        else if (average >= 67) return 'D+';
-        else if (average >= 60) return 'D';
-        else return 'F';
-    }
 });
