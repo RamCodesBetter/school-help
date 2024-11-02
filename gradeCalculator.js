@@ -1,66 +1,67 @@
-function showTab(tabName) {
-    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-    document.querySelector(`button[onclick="showTab('${tabName}')"]`).classList.add('active');
-    
-    if (tabName === 'manual') {
-        document.getElementById('manualSection').style.display = 'block';
-        document.getElementById('canvasSection').style.display = 'none';
-    } else {
-        document.getElementById('manualSection').style.display = 'none';
-        document.getElementById('canvasSection').style.display = 'block';
-    }
-}
-
-function processCanvasGrades() {
-    const content = document.getElementById('canvasInput').value;
-    
-    // Extract category totals using regex
-    const categories = {};
-    
-    // Pattern for category totals
-    const categoryPattern = /(Assignments|Formative|Summative|Homework)\s+(?:\d+(?:\.\d+)?%\s+)?(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/g;
-    let match;
-    
-    while ((match = categoryPattern.exec(content)) !== null) {
-        const categoryName = match[1];
-        const earned = parseFloat(match[2]);
-        const total = parseFloat(match[3]);
-        
-        if (total > 0) {  // Only include categories with non-zero totals
-            categories[categoryName] = {
-                earned,
-                total,
-                percentage: (earned / total * 100).toFixed(2)
-            };
-        }
-    }
-    
-    // Extract total percentage
-    const totalMatch = /Total:\s*(\d+(?:\.\d+)?%)/i.exec(content);
-    const totalPercentage = totalMatch ? totalMatch[1] : "N/A";
-    
-    // Format output
-    let output = '';
-    
-    // Add each category
-    Object.entries(categories).forEach(([name, data]) => {
-        if (name !== 'Assignments') {  // Skip the Assignments category if present
-            output += `${name}:\n`;
-            output += `${data.percentage}%\n`;
-            output += `${data.earned.toFixed(2)} / ${data.total.toFixed(2)}\n\n`;
-        }
-    });
-    
-    // Add total
-    output += `Total: ${totalPercentage}`;
-    
-    // Display the result
-    document.getElementById('result').textContent = output;
-}
-
 $(document).ready(function() {
     const weights = [];
 
+    // Show Tab Function
+    function showTab(tabName) {
+        $('.tab-button').removeClass('active');
+        $(`#${tabName}Button`).addClass('active');
+        
+        if (tabName === 'manual') {
+            $('#manualSection').show();
+            $('#canvasSection').hide();
+        } else {
+            $('#manualSection').hide();
+            $('#canvasSection').show();
+        }
+    }
+
+    // Event Listeners for Tabs
+    $('#manualButton').on('click', function() {
+        showTab('manual');
+    });
+
+    $('#canvasButton').on('click', function() {
+        showTab('canvas');
+    });
+
+    // Process Canvas Grades
+    $('#processCanvas').on('click', function() {
+        const content = $('#canvasInput').val();
+        const categories = {};
+        const categoryPattern = /(Assignments|Formative|Summative|Homework)\s+(?:\d+(?:\.\d+)?%\s+)?(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/g;
+        let match;
+        
+        while ((match = categoryPattern.exec(content)) !== null) {
+            const categoryName = match[1];
+            const earned = parseFloat(match[2]);
+            const total = parseFloat(match[3]);
+            
+            if (total > 0) {
+                categories[categoryName] = {
+                    earned,
+                    total,
+                    percentage: (earned / total * 100).toFixed(2)
+                };
+            }
+        }
+        
+        const totalMatch = /Total:\s*(\d+(?:\.\d+)?%)/i.exec(content);
+        const totalPercentage = totalMatch ? totalMatch[1] : "N/A";
+        
+        let output = '';
+        $.each(categories, function(name, data) {
+            if (name !== 'Assignments') {
+                output += `${name}:\n`;
+                output += `${data.percentage}%\n`;
+                output += `${data.earned.toFixed(2)} / ${data.total.toFixed(2)}\n\n`;
+            }
+        });
+        
+        output += `Total: ${totalPercentage}`;
+        $('#result').text(output);
+    });
+
+    // Add Weight
     $('#addWeight').on('click', function() {
         const weightName = $('#weightName').val();
         const weightPercent = parseFloat($('#weightPercent').val());
@@ -78,6 +79,7 @@ $(document).ready(function() {
         }
     });
 
+    // Add Grade
     $('#addGrade').on('click', function() {
         $('#gradesContainer').append(`
             <div class="grade-input">
@@ -111,6 +113,7 @@ $(document).ready(function() {
         return NaN;
     }
 
+    // Grade Calculation
     $('#gradeForm').on('submit', function(event) {
         event.preventDefault();
 
@@ -118,7 +121,6 @@ $(document).ready(function() {
         let finalGrade = 0;
         let summary = '';
 
-        // Validate and collect all grades
         let allValid = true;
         $('.gradeField').each(function(index) {
             const assignmentName = $('.gradeNameField').eq(index).val().trim();
@@ -157,7 +159,6 @@ $(document).ready(function() {
 
         if (!allValid) return;
 
-        // Build summary in the requested format
         Object.entries(categories).forEach(([name, data]) => {
             const categoryPercentage = (data.totalEarned / data.totalPossible) * 100;
             const contribution = categoryPercentage * (data.weight / 100);
