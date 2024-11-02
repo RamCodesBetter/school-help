@@ -1,48 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grade Calculator</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <h1>Grade Calculator</h1>
-    
-    <div class="tab-buttons">
-        <button class="tab-button active" onclick="showTab('manual')">Manual Entry</button>
-        <button class="tab-button" onclick="showTab('canvas')">Canvas Parser</button>
-    </div>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Grade Calculator</title>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+        <h1>Grade Calculator</h1>
+        
+        <div class="tab-buttons">
+            <button class="tab-button active" onclick="showTab('manual')">Manual Entry</button>
+            <button class="tab-button" onclick="showTab('canvas')">Canvas Parser</button>
+        </div>
 
-    <div id="manualSection" class="calculator-section">
-        <h2>Manual Grade Entry</h2>
-        <form id="gradeForm" novalidate>
-            <div id="weightInputs">
-                <label for="weightName">Weight Name:</label>
-                <input type="text" id="weightName">
-                <label for="weightPercent">Weight Percent:</label>
-                <input type="text" id="weightPercent">
-                <button type="button" id="addWeight">Add Weight</button>
-            </div>
+        <div id="manualSection" class="calculator-section">
+            <h2>Manual Grade Entry</h2>
+            <form id="gradeForm" novalidate>
+                <div id="weightInputs">
+                    <label for="weightName">Weight Name:</label>
+                    <input type="text" id="weightName">
+                    <label for="weightPercent">Weight Percent:</label>
+                    <input type="text" id="weightPercent">
+                    <button type="button" id="addWeight">Add Weight</button>
+                </div>
 
-            <ul id="weightList"></ul>
+                <ul id="weightList"></ul>
 
-            <button type="button" id="addGrade">Add Grade</button>
-            <div id="gradesContainer"></div>
+                <button type="button" id="addGrade">Add Grade</button>
+                <div id="gradesContainer"></div>
 
-            <button type="submit">Calculate Average</button>
-        </form>
-    </div>
+                <button type="submit">Calculate Average</button>
+            </form>
+        </div>
 
-    <div id="canvasSection" class="calculator-section" style="display: none;">
-        <h2>Canvas Grade Parser</h2>
-        <textarea id="canvasInput" placeholder="Paste your entire Canvas grade page content here..."></textarea>
-        <button onclick="processCanvasGrades()">Process Grades</button>
-    </div>
+        <div id="canvasSection" class="calculator-section" style="display: none;">
+            <h2>Canvas Grade Parser</h2>
+            <textarea id="canvasInput" placeholder="Paste your entire Canvas grade page content here..."></textarea>
+            <button onclick="processCanvasGrades()">Process Grades</button>
+        </div>
 
-    <div id="result"></div>
+        <div id="result"></div>
 
-    <script src="gradeCalculator.js"></script>
-</body>
+        <script src="gradeCalculator.js"></script>
+    </body>
 </html>
