@@ -30,15 +30,15 @@ $(document).ready(function() {
         showTab('canvas');
     });
 
-    // Process Canvas Grades
+    // Process canvas results
     $('#processCanvas').on('click', function() {
         const content = $('#canvasInput').val(); 
         console.log("Processing canvas grades with content:", content);
-    
+        
         const categories = {};
         
-        // General pattern to capture any category with a score in the format "CategoryName ... xx.xx / xx.xx"
-        const categoryPattern = /([\w\s]+?)\s+(?:\d+(?:\.\d+)?%\s+)?(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/g;
+        // Updated regex pattern
+        const categoryPattern = /([A-Za-z\s]+)\s+(?:\d+(?:\.\d+)?%\s+)?(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/g;
         let match;
         
         while ((match = categoryPattern.exec(content)) !== null) {
@@ -46,7 +46,7 @@ $(document).ready(function() {
             const earned = parseFloat(match[2]);
             const total = parseFloat(match[3]);
             console.log(`Found category: ${categoryName}, Earned: ${earned}, Total: ${total}`);
-
+    
             if (total > 0) {
                 categories[categoryName] = {
                     earned,
@@ -65,7 +65,7 @@ $(document).ready(function() {
         console.log(`Overall total percentage found: ${totalPercentage}`);
         
         let output = '';
-
+    
         // Display each dynamically detected category
         Object.entries(categories).forEach(([name, data]) => {
             output += `${name}:\n`;
@@ -79,6 +79,7 @@ $(document).ready(function() {
         $('#result').html(output.replace(/\n/g, '<br>'));
         console.log("Output generated for canvas grades:\n", output);
     });
+    
 
     // Add Weight
     $('#addWeight').on('click', function() {
