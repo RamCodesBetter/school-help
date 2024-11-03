@@ -171,6 +171,7 @@ $(document).ready(function() {
                 return false;
             }
 
+            // Initialize category if it doesn't exist
             if (!categories[weightName]) {
                 categories[weightName] = {
                     grades: [],
@@ -181,6 +182,7 @@ $(document).ready(function() {
                 console.log(`Initialized category "${weightName}" with weight ${categories[weightName].weight}`);
             }
             
+            // Add grade to the category
             categories[weightName].grades.push({
                 name: assignmentName,
                 score: score
@@ -193,6 +195,7 @@ $(document).ready(function() {
 
         if (!allValid) return;
 
+        // Generate the summary
         Object.entries(categories).forEach(([name, data]) => {
             const categoryPercentage = (data.totalEarned / data.totalPossible) * 100;
             const contribution = categoryPercentage * (data.weight / 100);
