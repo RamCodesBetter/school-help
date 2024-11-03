@@ -26,14 +26,21 @@ $(document).ready(function() {
         const content = $('#canvasInput').val();
         const categoryPattern = /([A-Za-z\s]+)\s+(\d+(?:\.\d+)?%)\s+(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/g;
         let match;
-        
+        let outputString = ''; // Initialize an output string
+    
         while ((match = categoryPattern.exec(content)) !== null) {
             const categoryName = match[1].trim();
             const earned = parseFloat(match[2]);
             const total = parseFloat(match[3]);
             categories[categoryName] = { earned, total, percentage: (earned / total * 100).toFixed(2) };
+            
+            // Append each category's data to outputString
+            outputString += `${categoryName}:\n${earned} / ${total} (${(earned / total * 100).toFixed(2)}%)\n\n`;
         }
-    });
+    
+        // Output the results
+        $('#canvasOutput').text(outputString.trim()); // Display the output
+    });    
 
     $('#addWeight').on('click', function() {
         const weightName = $('#weightName').val();
