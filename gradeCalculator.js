@@ -37,7 +37,6 @@ $(document).ready(function() {
         
         const categories = {};
         
-        // Updated regex pattern
         const categoryPattern = /([A-Za-z\s]+)\s+(?:\d+(?:\.\d+)?%\s+)?(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/g;
         let match;
         
@@ -48,38 +47,49 @@ $(document).ready(function() {
             console.log(`Found category: ${categoryName}, Earned: ${earned}, Total: ${total}`);
     
             if (total > 0) {
-                categories[categoryName] = {
+                if (!categories[categoryName]) {
+                    categories[categoryName] = {
+                        assignments: [],
+                        totalEarned: 0,
+                        totalPossible: 0
+                    };
+                }
+                
+                categories[categoryName].assignments.push({
                     earned,
                     total,
                     percentage: (earned / total * 100).toFixed(2)
-                };
-                console.log(`Added category data:`, categories[categoryName]);
+                });
+
+                categories[categoryName].totalEarned += earned;
+                categories[categoryName].totalPossible += total;
+                console.log(`Added assignment data to category "${categoryName}":`, categories[categoryName]);
             } else {
                 console.warn(`Total for category "${categoryName}" is not greater than 0.`);
             }
         }
         
-        // Pattern to extract the overall total percentage
         const totalMatch = /Total:\s*(\d+(?:\.\d+)?%)/i.exec(content);
         const totalPercentage = totalMatch ? totalMatch[1] : "N/A";
         console.log(`Overall total percentage found: ${totalPercentage}`);
         
         let output = '';
     
-        // Display each dynamically detected category
+        // Display each dynamically detected category and assignments
         Object.entries(categories).forEach(([name, data]) => {
             output += `${name}:\n`;
-            output += `${data.percentage}%\n`;
-            output += `${data.earned.toFixed(2)} / ${data.total.toFixed(2)}\n\n`;
+            data.assignments.forEach(assignment => {
+                output += `  - ${assignment.earned} / ${assignment.total} (${assignment.percentage}%)\n`;
+            });
+            output += `Total Earned: ${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}\n`;
+            output += `Category Percentage: ${((data.totalEarned / data.totalPossible) * 100).toFixed(2)}%\n\n`;
         });
         
-        // Append overall total
         output += `Total: ${totalPercentage}`;
         
         $('#result').html(output.replace(/\n/g, '<br>'));
         console.log("Output generated for canvas grades:\n", output);
     });
-    
 
     // Add Weight
     $('#addWeight').on('click', function() {
