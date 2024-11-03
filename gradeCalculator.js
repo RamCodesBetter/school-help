@@ -140,83 +140,68 @@ $(document).ready(function() {
         return NaN;
     }
 
-    // Grade Calculation
     $('#gradeForm').on('submit', function(event) {
         event.preventDefault();
         console.log("Calculating grades...");
-
+    
         const categories = {};
         let finalGrade = 0;
         let summary = '';
-
         let allValid = true;
+    
         $('.gradeField').each(function(index) {
             const assignmentName = $('.gradeNameField').eq(index).val().trim();
             const gradeInput = $(this).val().trim();
             const weightName = $('.weightSelect').eq(index).val();
-            console.log(`Processing grade entry ${index + 1}: Name="${assignmentName}", Input="${gradeInput}", Weight="${weightName}"`);
-
+    
             if (!gradeInput || !weightName) {
                 alert('Please fill out the grade and weight for each entry.');
-                console.error('Grade or weight not provided for entry:', index + 1);
                 allValid = false;
-                return false;
+                return false; // Exit the loop
             }
-
+    
             const score = parseFraction(gradeInput);
             if (!score || typeof score !== 'object') {
                 alert(`Invalid grade format: "${gradeInput}". Please use a fraction (e.g. 29/30)`);
-                console.error(`Invalid grade format for input: "${gradeInput}"`);
                 allValid = false;
-                return false;
+                return false; // Exit the loop
             }
-
-            // Initialize category if it doesn't exist
+    
             if (!categories[weightName]) {
                 categories[weightName] = {
                     grades: [],
-                    weight: weights.find(w => w.name === weightName)?.percent || 0,
                     totalEarned: 0,
                     totalPossible: 0
                 };
-                console.log(`Initialized category "${weightName}" with weight ${categories[weightName].weight}`);
             }
-            
-            // Add grade to the category
+    
             categories[weightName].grades.push({
                 name: assignmentName,
                 score: score
             });
             categories[weightName].totalEarned += score.earned;
             categories[weightName].totalPossible += score.total;
-
-            console.log(`Updated category "${weightName}": Total Earned=${categories[weightName].totalEarned}, Total Possible=${categories[weightName].totalPossible}`);
         });
-
+    
         if (!allValid) return;
-
-        // Generate the summary
+    
         Object.entries(categories).forEach(([name, data]) => {
-            const categoryPercentage = (data.totalEarned / data.totalPossible) * 100;
-            const contribution = categoryPercentage * (data.weight / 100);
-            
-            summary += `${name}:\n`;
-            summary += `Assignments:\n`;
-            data.grades.forEach(grade => {
-                summary += `  - ${grade.name}: ${grade.score.earned}/${grade.score.total} (${((grade.score.earned / grade.score.total) * 100).toFixed(2)}%)\n`;
-            });
-            summary += `Total Earned: ${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}\n`;
-            summary += `Category Percentage: ${categoryPercentage.toFixed(2)}%\n\n`;
-
-            finalGrade += contribution;
-            console.log(`Category "${name}" contributes ${contribution.toFixed(2)}% to final grade.`);
+            if (data.totalPossible > 0) {
+                const categoryPercentage = (data.totalEarned / data.totalPossible) * 100;
+                summary += `${name}:\nAssignments:\n`;
+    
+                data.grades.forEach(grade => {
+                    summary += `  - ${grade.name}: ${grade.score.earned}/${grade.score.total} (${((grade.score.earned / grade.score.total) * 100).toFixed(2)}%)\n`;
+                });
+    
+                summary += `Total Earned: ${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}\n`;
+                summary += `Category Percentage: ${categoryPercentage.toFixed(2)}%\n\n`;
+                finalGrade += categoryPercentage; // Adjust according to weight if applicable
+            } else {
+                console.warn(`No data for category "${name}"`);
+            }
         });
-
-        finalGrade = Number(finalGrade.toFixed(2));
-        
-        summary += `Total: ${finalGrade}%`;
-        console.log("Final grade calculated:", finalGrade);
-        
+    
         $('#result').html(summary.replace(/\n/g, '<br>'));
-    });
+    });    
 });
