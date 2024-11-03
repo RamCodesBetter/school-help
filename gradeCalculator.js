@@ -141,7 +141,6 @@ $(document).ready(function() {
     }
 
     // Grade Calculation
-    // Grade Calculation
     $('#gradeForm').on('submit', function(event) {
         event.preventDefault();
         console.log("Calculating grades...");
@@ -199,9 +198,13 @@ $(document).ready(function() {
             const contribution = categoryPercentage * (data.weight / 100);
             
             summary += `${name}:\n`;
-            summary += `${categoryPercentage.toFixed(2)}%\n`;
-            summary += `${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}\n\n`;
-            
+            summary += `Assignments:\n`;
+            data.grades.forEach(grade => {
+                summary += `  - ${grade.name}: ${grade.score.earned}/${grade.score.total} (${((grade.score.earned / grade.score.total) * 100).toFixed(2)}%)\n`;
+            });
+            summary += `Total Earned: ${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}\n`;
+            summary += `Category Percentage: ${categoryPercentage.toFixed(2)}%\n\n`;
+
             finalGrade += contribution;
             console.log(`Category "${name}" contributes ${contribution.toFixed(2)}% to final grade.`);
         });
