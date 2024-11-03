@@ -26,14 +26,24 @@ $(document).ready(function() {
         const content = $('#canvasInput').val();
         const categoryPattern = /([A-Za-z\s]+)\s+(\d+(?:\.\d+)?%)\s+(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/g;
         let match;
+        let outputString = ''; // Prepare a string to hold output
         
+        // Reset categories before processing new input
+        categories = {};
+    
         while ((match = categoryPattern.exec(content)) !== null) {
             const categoryName = match[1].trim();
-            const earned = parseFloat(match[2]);
-            const total = parseFloat(match[3]);
+            const earned = parseFloat(match[3]); // Corrected to use the right match index
+            const total = parseFloat(match[4]); // Corrected to use the right match index
             categories[categoryName] = { earned, total, percentage: (earned / total * 100).toFixed(2) };
+            
+            // Append each category's data to outputString
+            outputString += `${categoryName}: ${earned} / ${total} (${(earned / total * 100).toFixed(2)}%)\n`;
         }
-    });
+    
+        // Display the output in the canvasOutput div
+        $('#canvasOutput').text(outputString.trim() || 'No grades found.'); // Show the results or a default message if empty
+    });    
 
     $('#addWeight').on('click', function() {
         const weightName = $('#weightName').val();
