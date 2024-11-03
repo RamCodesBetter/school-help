@@ -141,6 +141,7 @@ $(document).ready(function() {
     }
 
     // Grade Calculation
+    // Grade Calculation
     $('#gradeForm').on('submit', function(event) {
         event.preventDefault();
         console.log("Calculating grades...");
