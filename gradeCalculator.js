@@ -4,36 +4,47 @@ $(document).ready(function() {
 
     // Show Tab Function
     function showTab(tabName) {
+        console.log(`Switching to tab: ${tabName}`);
         $('.tab-button').removeClass('active');
         $(`#${tabName}Button`).addClass('active');
         
         if (tabName === 'manual') {
             $('#manualSection').show();
             $('#canvasSection').hide();
+            console.log("Showing manual section.");
         } else {
             $('#manualSection').hide();
             $('#canvasSection').show();
+            console.log("Showing canvas section.");
         }
     }
 
     // Event Listeners for Tabs
-    $('#manualButton').on('click', () => showTab('manual'));
-    $('#canvasButton').on('click', () => showTab('canvas'));
+    $('#manualButton').on('click', function() {
+        console.log("Manual button clicked.");
+        showTab('manual');
+    });
+
+    $('#canvasButton').on('click', function() {
+        console.log("Canvas button clicked.");
+        showTab('canvas');
+    });
 
     // Process Canvas results
     $('#processCanvas').on('click', function() {
-        const content = $('#canvasInput').val();
+        const content = $('#canvasInput').val(); 
+        console.log("Processing canvas grades with content:", content);
         
         const categories = {};
         
-        // Regex pattern to match categories and grades
-        const categoryPattern = /([A-Za-z\s]+)\s+(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/g;
+        const categoryPattern = /([A-Za-z\s]+)\s+(?:\d+(?:\.\d+)?%\s+)?(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/g;
         let match;
         
         while ((match = categoryPattern.exec(content)) !== null) {
             const categoryName = match[1].trim();
             const earned = parseFloat(match[2]);
             const total = parseFloat(match[3]);
+            console.log(`Found category: ${categoryName}, Earned: ${earned}, Total: ${total}`);
     
             if (total > 0) {
                 if (!categories[categoryName]) {
@@ -52,35 +63,39 @@ $(document).ready(function() {
 
                 categories[categoryName].totalEarned += earned;
                 categories[categoryName].totalPossible += total;
+                console.log(`Added assignment data to category "${categoryName}":`, categories[categoryName]);
+            } else {
+                console.warn(`Total for category "${categoryName}" is not greater than 0.`);
             }
         }
         
-        // Process total percentage, if available
         const totalMatch = /Total:\s*(\d+(?:\.\d+)?%)/i.exec(content);
         const totalPercentage = totalMatch ? totalMatch[1] : "N/A";
+        console.log(`Overall total percentage found: ${totalPercentage}`);
         
         let output = '';
-
-        // Display each category with its assignments
+    
+        // Display each dynamically detected category and assignments
         Object.entries(categories).forEach(([name, data]) => {
-            output += `<strong>${name}:</strong><br>`;
+            output += `${name}:\n`;
             data.assignments.forEach(assignment => {
-                output += `&nbsp;&nbsp;- ${assignment.earned} / ${assignment.total} (${assignment.percentage}%)<br>`;
+                output += `  - ${assignment.earned} / ${assignment.total} (${assignment.percentage}%)\n`;
             });
-            output += `Total Earned: ${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}<br>`;
-            output += `Category Percentage: ${(data.totalEarned / data.totalPossible * 100).toFixed(2)}%<br><br>`;
+            output += `Total Earned: ${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}\n`;
+            output += `Category Percentage: ${((data.totalEarned / data.totalPossible) * 100).toFixed(2)}%\n\n`;
         });
-
-        // Append overall total
-        output += `<strong>Total: ${totalPercentage}</strong>`;
         
-        $('#result').html(output);
+        output += `Total: ${totalPercentage}`;
+        
+        $('#result').html(output.replace(/\n/g, '<br>'));
+        console.log("Output generated for canvas grades:\n", output);
     });
 
     // Add Weight
     $('#addWeight').on('click', function() {
         const weightName = $('#weightName').val();
         const weightPercent = parseFloat($('#weightPercent').val());
+        console.log("Adding weight:", weightName, weightPercent);
 
         if (weightName && !isNaN(weightPercent) && weightPercent > 0) {
             weights.push({ name: weightName, percent: weightPercent });
@@ -90,13 +105,16 @@ $(document).ready(function() {
             });
             $('#weightName').val('');
             $('#weightPercent').val('');
+            console.log(`Weight added successfully: ${weightName} - ${weightPercent}%`);
         } else {
+            console.error('Invalid weight input.');
             alert('Please enter a valid weight name and percent.');
         }
     });
 
     // Add Grade
     $('#addGrade').on('click', function() {
+        console.log("Adding a new grade input.");
         $('#gradesContainer').append(`
             <div class="grade-input">
                 <input type="text" class="gradeNameField" placeholder="Assignment Name">
@@ -110,6 +128,7 @@ $(document).ready(function() {
     });
 
     function parseFraction(input) {
+        console.log(`Parsing fraction from input: "${input}"`);
         if (!input || input.trim() === '') return NaN;
         if (!isNaN(input)) return parseFloat(input);
 
@@ -119,6 +138,7 @@ $(document).ready(function() {
             const denominator = parseFloat(parts[1].trim());
             
             if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+                console.log(`Parsed fraction: ${numerator}/${denominator}`);
                 return {
                     percentage: (numerator / denominator) * 100,
                     earned: numerator,
@@ -126,11 +146,13 @@ $(document).ready(function() {
                 };
             }
         }
+        console.warn(`Failed to parse fraction for input: "${input}"`);
         return NaN;
     }
 
     $('#gradeForm').on('submit', function(event) {
         event.preventDefault();
+        console.log("Calculating grades...");
     
         const categories = {};
         let finalGrade = 0;
@@ -145,14 +167,14 @@ $(document).ready(function() {
             if (!gradeInput || !weightName) {
                 alert('Please fill out the grade and weight for each entry.');
                 allValid = false;
-                return false;
+                return false; // Exit the loop
             }
     
             const score = parseFraction(gradeInput);
             if (!score || typeof score !== 'object') {
                 alert(`Invalid grade format: "${gradeInput}". Please use a fraction (e.g. 29/30)`);
                 allValid = false;
-                return false;
+                return false; // Exit the loop
             }
     
             if (!categories[weightName]) {
@@ -176,18 +198,20 @@ $(document).ready(function() {
         Object.entries(categories).forEach(([name, data]) => {
             if (data.totalPossible > 0) {
                 const categoryPercentage = (data.totalEarned / data.totalPossible) * 100;
-                summary += `<strong>${name}:</strong><br>Assignments:<br>`;
+                summary += `${name}:\nAssignments:\n`;
     
                 data.grades.forEach(grade => {
-                    summary += `&nbsp;&nbsp;- ${grade.name}: ${grade.score.earned}/${grade.score.total} (${((grade.score.earned / grade.score.total) * 100).toFixed(2)}%)<br>`;
+                    summary += `  - ${grade.name}: ${grade.score.earned}/${grade.score.total} (${((grade.score.earned / grade.score.total) * 100).toFixed(2)}%)\n`;
                 });
     
-                summary += `Total Earned: ${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}<br>`;
-                summary += `Category Percentage: ${categoryPercentage.toFixed(2)}%<br><br>`;
-                finalGrade += categoryPercentage;
+                summary += `Total Earned: ${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}\n`;
+                summary += `Category Percentage: ${categoryPercentage.toFixed(2)}%\n\n`;
+                finalGrade += categoryPercentage; // Adjust according to weight if applicable
+            } else {
+                console.warn(`No data for category "${name}"`);
             }
         });
     
-        $('#result').html(summary);
+        $('#result').html(summary.replace(/\n/g, '<br>'));
     });    
 });
