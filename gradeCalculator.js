@@ -2,7 +2,6 @@ $(document).ready(function() {
     const weights = [];
     console.log("Document is ready.");
 
-    // Show Tab Function
     function showTab(tabName) {
         console.log(`Switching to tab: ${tabName}`);
         $('.tab-button').removeClass('active');
@@ -19,7 +18,6 @@ $(document).ready(function() {
         }
     }
 
-    // Event Listeners for Tabs
     $('#manualButton').on('click', function() {
         console.log("Manual button clicked.");
         showTab('manual');
@@ -30,7 +28,6 @@ $(document).ready(function() {
         showTab('canvas');
     });
 
-    // Process Canvas results
     $('#processCanvas').on('click', function() {
         const content = $('#canvasInput').val(); 
         console.log("Processing canvas grades with content:", content);
@@ -75,11 +72,10 @@ $(document).ready(function() {
         
         let output = '';
     
-        // Display each dynamically detected category and assignments
         Object.entries(categories).forEach(([name, data]) => {
-            output += `${name}:\n`;
+            output += `${name}:\nAssignments:\n`;
             data.assignments.forEach(assignment => {
-                output += `  - ${assignment.earned} / ${assignment.total} (${assignment.percentage}%)\n`;
+                output += `  - Earned: ${assignment.earned} / ${assignment.total} (${assignment.percentage}%)\n`;
             });
             output += `Total Earned: ${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}\n`;
             output += `Category Percentage: ${((data.totalEarned / data.totalPossible) * 100).toFixed(2)}%\n\n`;
@@ -91,7 +87,6 @@ $(document).ready(function() {
         console.log("Output generated for canvas grades:\n", output);
     });
 
-    // Add Weight
     $('#addWeight').on('click', function() {
         const weightName = $('#weightName').val();
         const weightPercent = parseFloat($('#weightPercent').val());
@@ -112,7 +107,6 @@ $(document).ready(function() {
         }
     });
 
-    // Add Grade
     $('#addGrade').on('click', function() {
         console.log("Adding a new grade input.");
         $('#gradesContainer').append(`
@@ -167,14 +161,14 @@ $(document).ready(function() {
             if (!gradeInput || !weightName) {
                 alert('Please fill out the grade and weight for each entry.');
                 allValid = false;
-                return false; // Exit the loop
+                return false;
             }
     
             const score = parseFraction(gradeInput);
             if (!score || typeof score !== 'object') {
                 alert(`Invalid grade format: "${gradeInput}". Please use a fraction (e.g. 29/30)`);
                 allValid = false;
-                return false; // Exit the loop
+                return false;
             }
     
             if (!categories[weightName]) {
@@ -206,7 +200,7 @@ $(document).ready(function() {
     
                 summary += `Total Earned: ${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}\n`;
                 summary += `Category Percentage: ${categoryPercentage.toFixed(2)}%\n\n`;
-                finalGrade += categoryPercentage; // Adjust according to weight if applicable
+                finalGrade += categoryPercentage; 
             } else {
                 console.warn(`No data for category "${name}"`);
             }
