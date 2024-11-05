@@ -48,7 +48,7 @@ $(document).ready(function() {
         Object.entries(categories).forEach(([name, data]) => {
             output += `${name}:\nAssignments:\n`;
             data.assignments.forEach(assignment => {
-                output += `  - Earned: ${assignment.earned} / ${assignment.total} (${assignment.percentage}%)\n`;
+                output += `  - ${assignment.name}: ${assignment.earned} / ${assignment.total} (${assignment.percentage}%)\n`;
             });
             output += `Total Earned: ${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}\n`;
             output += `Category Percentage: ${((data.totalEarned / data.totalPossible) * 100).toFixed(2)}%\n\n`;
