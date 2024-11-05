@@ -1,4 +1,19 @@
 $(document).ready(function() {
+     // Toggle sections when buttons are clicked
+     $('#manualButton').on('click', function() {
+        $('#manualSection').show();
+        $('#canvasSection').hide();
+        $('#manualButton').addClass('active');
+        $('#canvasButton').removeClass('active');
+    });
+
+    $('#canvasButton').on('click', function() {
+        $('#canvasSection').show();
+        $('#manualSection').hide();
+        $('#canvasButton').addClass('active');
+        $('#manualButton').removeClass('active');
+    });
+    
     const weights = [];
     const gradingScales = {
         allGrades: [
