@@ -1,62 +1,71 @@
 $(document).ready(function() {
     const weights = [];
+    const gradingScales = {
+        allGrades: [
+            { letter: 'A', min: 93, max: 100 },
+            { letter: 'A-', min: 90, max: 92.99 },
+            { letter: 'B+', min: 87, max: 89.99 },
+            { letter: 'B', min: 83, max: 86.99 },
+            { letter: 'B-', min: 80, max: 82.99 },
+            { letter: 'C+', min: 77, max: 79.99 },
+            { letter: 'C', min: 73, max: 76.99 },
+            { letter: 'C-', min: 70, max: 72.99 },
+            { letter: 'D+', min: 67, max: 69.99 },
+            { letter: 'D', min: 60, max: 66.99 },
+            { letter: 'F', min: 0, max: 59.99 }
+        ],
+        noMinuses: [
+            { letter: 'A', min: 90, max: 100 },
+            { letter: 'B+', min: 87, max: 89.99 },
+            { letter: 'B', min: 80, max: 86.99 },
+            { letter: 'C+', min: 77, max: 79.99 },
+            { letter: 'C', min: 70, max: 76.99 },
+            { letter: 'D+', min: 67, max: 69.99 },
+            { letter: 'D', min: 60, max: 66.99 },
+            { letter: 'F', min: 0, max: 59.99 }
+        ],
+        noPlusMinus: [
+            { letter: 'A', min: 90, max: 100 },
+            { letter: 'B', min: 80, max: 89.99 },
+            { letter: 'C', min: 70, max: 79.99 },
+            { letter: 'D', min: 60, max: 69.99 },
+            { letter: 'F', min: 0, max: 59.99 }
+        ]
+    };
+    
+    let selectedGradingScale = gradingScales.allGrades;
 
-    function showTab(tabName) {
-        $('.tab-button').removeClass('active');
-        $(`#${tabName}Button`).addClass('active');
-        $('#manualSection').toggle(tabName === 'manual');
-        $('#canvasSection').toggle(tabName !== 'manual');
-    }
-
-    $('#manualButton').on('click', function() {
-        showTab('manual');
+    $('#gradingScaleSelect').on('change', function() {
+        const scale = $(this).val();
+        selectedGradingScale = gradingScales[scale] || gradingScales.allGrades;
     });
 
-    $('#canvasButton').on('click', function() {
-        showTab('canvas');
-    });
-
-    $('#processCanvas').on('click', function() {
-        const content = $('#canvasInput').val();
-        const categories = {};
-        const categoryPattern = /([A-Za-z\s]+)\s+(?:\d+(?:\.\d+)?%\s+)?(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/g;
-        let match;
-
-        while ((match = categoryPattern.exec(content)) !== null) {
-            const categoryName = match[1].trim();
-            const earned = parseFloat(match[2]);
-            const total = parseFloat(match[3]);
-
-            if (total > 0) {
-                if (!categories[categoryName]) {
-                    categories[categoryName] = { assignments: [], totalEarned: 0, totalPossible: 0 };
-                }
-                categories[categoryName].assignments.push({
-                    name: `${categoryName} Assignment ${categories[categoryName].assignments.length + 1}`,
-                    earned,
-                    total,
-                    percentage: (earned / total * 100).toFixed(2)
-                });
-                categories[categoryName].totalEarned += earned;
-                categories[categoryName].totalPossible += total;
+    function getLetterGrade(percentage) {
+        for (const grade of selectedGradingScale) {
+            if (percentage >= grade.min && percentage <= grade.max) {
+                return grade.letter;
             }
         }
+        return 'N/A';
+    }
 
-        const totalMatch = /Total:\s*(\d+(?:\.\d+)?%)/i.exec(content);
-        const totalPercentage = totalMatch ? totalMatch[1] : "N/A";
+    $('#addWeight').on('click', function() {
+        const weightName = $('#weightName').val().trim();
+        const weightPercent = parseFloat($('#weightPercent').val());
 
-        let output = '';
-        Object.entries(categories).forEach(([name, data]) => {
-            output += `${name}:\nAssignments:\n`;
-            data.assignments.forEach(assignment => {
-                output += `  - ${assignment.name}: ${assignment.earned} / ${assignment.total} (${assignment.percentage}%)\n`;
-            });
-            output += `Total Earned: ${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}\n`;
-            output += `Category Percentage: ${((data.totalEarned / data.totalPossible) * 100).toFixed(2)}%\n\n`;
-        });
-        output += `Total: ${totalPercentage}`;
-        $('#result').html(output.replace(/\n/g, '<br>'));
+        if (weightName && !isNaN(weightPercent)) {
+            weights.push({ name: weightName, percent: weightPercent });
+            $('#weightList').append(`<li>${weightName} (${weightPercent}%)</li>`);
+            updateWeightDropdown();
+        }
     });
+
+    function updateWeightDropdown() {
+        const options = weights.map(w => `<option value="${w.name}">${w.name}</option>`).join('');
+        $('.weightSelect').each(function() {
+            $(this).html(`<option value="">Select Weight</option>${options}`);
+        });
+    }
 
     $('#addGrade').on('click', function() {
         $('#gradesContainer').append(`
@@ -71,27 +80,9 @@ $(document).ready(function() {
         `);
     });
 
-    function parseFraction(input) {
-        if (!input || input.trim() === '') return NaN;
-        if (!isNaN(input)) return parseFloat(input);
-
-        const parts = input.split('/');
-        if (parts.length === 2) {
-            const numerator = parseFloat(parts[0].trim());
-            const denominator = parseFloat(parts[1].trim());
-            return denominator !== 0 ? {
-                percentage: (numerator / denominator) * 100,
-                earned: numerator,
-                total: denominator
-            } : NaN;
-        }
-        return NaN;
-    }
-
     $('#gradeForm').on('submit', function(event) {
         event.preventDefault();
         const categories = {};
-        let finalGrade = 0;
         let summary = '';
         let allValid = true;
 
@@ -113,14 +104,20 @@ $(document).ready(function() {
                 return false;
             }
 
+            const percentage = ((score.earned / score.total) * 100).toFixed(2);
+            const letterGrade = getLetterGrade(percentage);
+
             if (!categories[weightName]) {
                 categories[weightName] = { grades: [], totalEarned: 0, totalPossible: 0 };
             }
 
             categories[weightName].grades.push({
                 name: assignmentName,
-                score: score
+                fraction: `${score.earned}/${score.total}`,
+                percentage,
+                letter: letterGrade
             });
+
             categories[weightName].totalEarned += score.earned;
             categories[weightName].totalPossible += score.total;
         });
@@ -129,17 +126,33 @@ $(document).ready(function() {
 
         Object.entries(categories).forEach(([name, data]) => {
             if (data.totalPossible > 0) {
-                const categoryPercentage = (data.totalEarned / data.totalPossible) * 100;
+                const categoryPercentage = (data.totalEarned / data.totalPossible * 100).toFixed(2);
                 summary += `${name}:\nAssignments:\n`;
                 data.grades.forEach(grade => {
-                    summary += `  - ${grade.name}: ${grade.score.earned}/${grade.score.total} (${((grade.score.earned / grade.score.total) * 100).toFixed(2)}%)\n`;
+                    summary += `  - ${grade.name}: ${grade.fraction} (${grade.percentage}%) ${grade.letter}\n`;
                 });
                 summary += `Total Earned: ${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}\n`;
-                summary += `Category Percentage: ${categoryPercentage.toFixed(2)}%\n\n`;
-                finalGrade += categoryPercentage;
+                summary += `Category Percentage: ${categoryPercentage}%\n\n`;
             }
         });
 
         $('#result').html(summary.replace(/\n/g, '<br>'));
     });
 });
+
+function parseFraction(input) {
+    if (!input || input.trim() === '') return NaN;
+    if (!isNaN(input)) return parseFloat(input);
+
+    const parts = input.split('/');
+    if (parts.length === 2) {
+        const numerator = parseFloat(parts[0].trim());
+        const denominator = parseFloat(parts[1].trim());
+        return denominator !== 0 ? {
+            percentage: (numerator / denominator) * 100,
+            earned: numerator,
+            total: denominator
+        } : NaN;
+    }
+    return NaN;
+}

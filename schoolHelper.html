@@ -31,6 +31,13 @@
             <button type="button" id="addGrade">Add Grade</button>
             <div id="gradesContainer"></div>
 
+            <label for="gradingScaleSelect">Grading Scale:</label>
+            <select id="gradingScaleSelect">
+                <option value="allGrades">All Grades</option>
+                <option value="noMinuses">No Minuses</option>
+                <option value="noPlusMinus">No Pluses and Minuses</option>
+            </select>
+
             <button type="submit">Calculate Average</button>
         </form>
     </div>
@@ -38,6 +45,14 @@
     <div id="canvasSection" class="calculator-section" style="display: none;">
         <h2>Canvas Grade Parser</h2>
         <textarea id="canvasInput" placeholder="Paste your entire Canvas grade page content here..."></textarea>
+
+        <label for="gradingScaleSelect">Grading Scale:</label>
+        <select id="gradingScaleSelect">
+            <option value="allGrades">All Grades</option>
+            <option value="noMinuses">No Minuses</option>
+            <option value="noPlusMinus">No Pluses and Minuses</option>
+        </select>
+        
         <button id="processCanvas">Process Grades</button>
     </div>
 
