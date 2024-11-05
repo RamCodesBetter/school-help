@@ -1,15 +1,14 @@
 $(document).ready(function() {
-     // Toggle sections when buttons are clicked
-     $('#manualButton').on('click', function() {
-        $('#manualSection').show();
-        $('#canvasSection').hide();
+    $('#manualButton').on('click', function() {
+        $('#manualSection').css('display', 'block');
+        $('#canvasSection').css('display', 'none');
         $('#manualButton').addClass('active');
         $('#canvasButton').removeClass('active');
     });
 
     $('#canvasButton').on('click', function() {
-        $('#canvasSection').show();
-        $('#manualSection').hide();
+        $('#canvasSection').css('display', 'block');
+        $('#manualSection').css('display', 'none');
         $('#canvasButton').addClass('active');
         $('#manualButton').removeClass('active');
     });
