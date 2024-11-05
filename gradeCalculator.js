@@ -32,6 +32,7 @@ $(document).ready(function() {
                     categories[categoryName] = { assignments: [], totalEarned: 0, totalPossible: 0 };
                 }
                 categories[categoryName].assignments.push({
+                    name: match[0], // Use the matched line as the assignment name
                     earned,
                     total,
                     percentage: (earned / total * 100).toFixed(2)
