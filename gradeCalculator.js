@@ -32,7 +32,7 @@ $(document).ready(function() {
                     categories[categoryName] = { assignments: [], totalEarned: 0, totalPossible: 0 };
                 }
                 categories[categoryName].assignments.push({
-                    name: match[0], // Use the matched line as the assignment name
+                    name: `${categoryName} Assignment ${categories[categoryName].assignments.length + 1}`,
                     earned,
                     total,
                     percentage: (earned / total * 100).toFixed(2)
@@ -96,7 +96,7 @@ $(document).ready(function() {
         let allValid = true;
 
         $('.gradeField').each(function(index) {
-            const assignmentName = $('.gradeNameField').eq(index).val().trim();
+            const assignmentName = $('.gradeNameField').eq(index).val().trim() || `Assignment ${index + 1}`;
             const gradeInput = $(this).val().trim();
             const weightName = $('.weightSelect').eq(index).val();
 
