@@ -152,6 +152,32 @@ $(document).ready(function() {
 
         $('#result').html(summary.replace(/\n/g, '<br>'));
     });
+
+    // Canvas parser functionality
+    $('#processCanvas').on('click', function() {
+        const canvasInput = $('#canvasInput').val().trim();
+        if (!canvasInput) {
+            alert('Please paste your Canvas grades.');
+            return;
+        }
+
+        let summary = 'Parsed Canvas Grades:\n';
+        // Split by line and process each line assuming format "Assignment Name: score/total"
+        canvasInput.split('\n').forEach((line, index) => {
+            const [name, fraction] = line.split(':');
+            if (!name || !fraction) return;
+
+            const score = parseFraction(fraction.trim());
+            if (!score) return;
+
+            const percentage = ((score.earned / score.total) * 100).toFixed(2);
+            const letterGrade = getLetterGrade(percentage);
+
+            summary += `- ${name.trim()}: ${score.earned}/${score.total} (${percentage}%) ${letterGrade}\n`;
+        });
+
+        $('#result').html(summary.replace(/\n/g, '<br>'));
+    });
 });
 
 function parseFraction(input) {
