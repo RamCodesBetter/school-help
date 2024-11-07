@@ -27,23 +27,6 @@ $(document).ready(function() {
             { letter: 'D+', min: 67, max: 69.99 },
             { letter: 'D', min: 60, max: 66.99 },
             { letter: 'F', min: 0, max: 59.99 }
-        ],
-        noMinuses: [
-            { letter: 'A', min: 90, max: 100 },
-            { letter: 'B+', min: 87, max: 89.99 },
-            { letter: 'B', min: 80, max: 86.99 },
-            { letter: 'C+', min: 77, max: 79.99 },
-            { letter: 'C', min: 70, max: 76.99 },
-            { letter: 'D+', min: 67, max: 69.99 },
-            { letter: 'D', min: 60, max: 66.99 },
-            { letter: 'F', min: 0, max: 59.99 }
-        ],
-        noPlusMinus: [
-            { letter: 'A', min: 90, max: 100 },
-            { letter: 'B', min: 80, max: 89.99 },
-            { letter: 'C', min: 70, max: 79.99 },
-            { letter: 'D', min: 60, max: 69.99 },
-            { letter: 'F', min: 0, max: 59.99 }
         ]
     };
     
@@ -97,30 +80,26 @@ $(document).ready(function() {
     // Grade Calculation
     $('#gradeForm').on('submit', function(event) {
         event.preventDefault();
-        console.log("Calculating grades...");
-
+        
         const categories = {};
         let finalGrade = 0;
         let summary = '';
-
         let allValid = true;
+
         $('.gradeField').each(function(index) {
             const assignmentName = $('.gradeNameField').eq(index).val().trim();
             const gradeInput = $(this).val().trim();
             const weightName = $('.weightSelect').eq(index).val();
-            console.log(`Processing grade entry ${index + 1}: Name="${assignmentName}", Input="${gradeInput}", Weight="${weightName}"`);
 
             if (!gradeInput || !weightName) {
                 alert('Please fill out the grade and weight for each entry.');
-                console.error('Grade or weight not provided for entry:', index + 1);
                 allValid = false;
                 return false;
             }
 
             const score = parseFraction(gradeInput);
-            if (!score || typeof score !== 'object') {
+            if (!score) {
                 alert(`Invalid grade format: "${gradeInput}". Please use a fraction (e.g. 29/30)`);
-                console.error(`Invalid grade format for input: "${gradeInput}"`);
                 allValid = false;
                 return false;
             }
@@ -132,7 +111,6 @@ $(document).ready(function() {
                     totalEarned: 0,
                     totalPossible: 0
                 };
-                console.log(`Initialized category "${weightName}" with weight ${categories[weightName].weight}`);
             }
             
             categories[weightName].grades.push({
@@ -141,8 +119,6 @@ $(document).ready(function() {
             });
             categories[weightName].totalEarned += score.earned;
             categories[weightName].totalPossible += score.total;
-
-            console.log(`Updated category "${weightName}": Total Earned=${categories[weightName].totalEarned}, Total Possible=${categories[weightName].totalPossible}`);
         });
 
         if (!allValid) return;
@@ -150,63 +126,33 @@ $(document).ready(function() {
         Object.entries(categories).forEach(([name, data]) => {
             const categoryPercentage = (data.totalEarned / data.totalPossible) * 100;
             const contribution = categoryPercentage * (data.weight / 100);
-            
-            summary += `${name}:\n`;
-            summary += `${categoryPercentage.toFixed(2)}%\n`;
-            summary += `${data.totalEarned.toFixed(2)} / ${data.totalPossible.toFixed(2)}\n\n`;
+
+            summary += `${name} (${data.weight}%):\n`;
+            data.grades.forEach((grade) => {
+                const percentage = ((grade.score.earned / grade.score.total) * 100).toFixed(2);
+                const letterGrade = getLetterGrade(percentage);
+                summary += `&nbsp;&nbsp;${grade.name}: ${letterGrade} ${percentage}% (${grade.score.earned}/${grade.score.total})\n`;
+            });
+            summary += `&nbsp;&nbsp;Category Grade: ${categoryPercentage.toFixed(2)}%\n\n`;
             
             finalGrade += contribution;
-            console.log(`Category "${name}" contributes ${contribution.toFixed(2)}% to final grade.`);
         });
 
         finalGrade = Number(finalGrade.toFixed(2));
-        
-        summary += `Total: ${finalGrade}%`;
-        console.log("Final grade calculated:", finalGrade);
+        const finalLetterGrade = getLetterGrade(finalGrade);
+
+        summary += `Total Grade: ${finalGrade}% ${finalLetterGrade}`;
         
         $('#result').html(summary.replace(/\n/g, '<br>'));
     });
 
-    // Canvas parser functionality
-    $('#processCanvas').on('click', function() {
-        const canvasInput = $('#canvasInput').val().trim();
-        if (!canvasInput) {
-            alert('Please paste your Canvas grades.');
-            return;
+    function parseFraction(input) {
+        const parts = input.split('/');
+        if (parts.length === 2) {
+            const numerator = parseFloat(parts[0].trim());
+            const denominator = parseFloat(parts[1].trim());
+            return denominator !== 0 ? { earned: numerator, total: denominator } : null;
         }
-
-        let summary = 'Parsed Canvas Grades:\n';
-        // Split by line and process each line assuming format "Assignment Name: score/total"
-        canvasInput.split('\n').forEach((line, index) => {
-            const [name, fraction] = line.split(':');
-            if (!name || !fraction) return;
-
-            const score = parseFraction(fraction.trim());
-            if (!score) return;
-
-            const percentage = ((score.earned / score.total) * 100).toFixed(2);
-            const letterGrade = getLetterGrade(percentage);
-
-            summary += `- ${name.trim()}: ${score.earned}/${score.total} (${percentage}%) ${letterGrade}\n`;
-        });
-
-        $('#result').html(summary.replace(/\n/g, '<br>'));
-    });
-});
-
-function parseFraction(input) {
-    if (!input || input.trim() === '') return NaN;
-    if (!isNaN(input)) return parseFloat(input);
-
-    const parts = input.split('/');
-    if (parts.length === 2) {
-        const numerator = parseFloat(parts[0].trim());
-        const denominator = parseFloat(parts[1].trim());
-        return denominator !== 0 ? {
-            percentage: (numerator / denominator) * 100,
-            earned: numerator,
-            total: denominator
-        } : NaN;
+        return null;
     }
-    return NaN;
-}
+});
