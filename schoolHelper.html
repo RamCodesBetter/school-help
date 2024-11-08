@@ -44,7 +44,7 @@
 
     <div id="canvasSection" class="calculator-section" style="display: none;">
         <h2>Canvas Grade Parser</h2>
-        <textarea id="canvasInput" placeholder="Paste your entire Canvas grade page content here..."></textarea>
+        <textarea id="assignmentsText" placeholder="Paste Canvas assignments here"></textarea>
 
         <label for="canvasGradingScaleSelect">Grading Scale:</label>
         <select id="canvasGradingScaleSelect">
@@ -53,10 +53,10 @@
             <option value="noPlusMinus">No Pluses and Minuses</option>
         </select>
         
-        <button id="processCanvas">Process Grades</button>
+        <button onclick="processGrades()">Process Grades</button>
     </div>
 
-    <div id="result"></div>
+    <p id="finalGrade">Final Grade: </p>
 
     <script src="gradeCalculator.js"></script>
 </body>

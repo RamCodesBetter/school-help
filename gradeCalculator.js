@@ -74,4 +74,32 @@ $(document).ready(function() {
 
         $('#result').text(resultText);
     });
+
+    function processGrades() {
+        const assignmentsText = document.getElementById('assignmentsText').value;
+        
+        // Match assignments with their scores
+        const assignmentRegex = /(\d+)\/(\d+) ptsScore: \d+ out of \d+ points./g;
+        
+        let totalEarned = 0;
+        let totalPossible = 0;
+        let match;
+    
+        // Loop through all found matches
+        while ((match = assignmentRegex.exec(assignmentsText)) !== null) {
+            let earned = parseInt(match[1]);
+            let possible = parseInt(match[2]);
+    
+            // Add to totals
+            totalEarned += earned;
+            totalPossible += possible;
+        }
+    
+        // Calculate the final grade
+        const finalGrade = (totalEarned / totalPossible) * 100;
+    
+        // Display result
+        document.getElementById('finalGrade').innerText = `Final Grade: ${isNaN(finalGrade) ? 'N/A' : finalGrade.toFixed(2)}%`;
+    }
+    
 });
