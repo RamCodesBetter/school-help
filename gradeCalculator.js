@@ -3,15 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const addAssignmentBtn = document.getElementById('addAssignment');
     const totalGradeSpan = document.getElementById('totalGrade');
 
-    // Add paste area to HTML
-    const pasteArea = document.createElement('div');
-    pasteArea.className = 'paste-area';
-    pasteArea.innerHTML = `
-        <textarea id="canvasPaste" placeholder="Paste your Canvas grades here..."></textarea>
-        <button id="processPaste">Process Canvas Grades</button>
-    `;
-    document.querySelector('.calculator').insertBefore(pasteArea, assignmentList);
-
     function parseCanvasGrades(text) {
         const rows = text.trim().split('\n');
         const assignments = [];
