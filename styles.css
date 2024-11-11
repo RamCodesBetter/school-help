@@ -1,3 +1,6 @@
+/* At the very top of the file */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap');
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -5,7 +8,7 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     line-height: 1.6;
     background-color: #e8f0fe;
 }
@@ -339,4 +342,29 @@ button:hover {
     border-radius: 4px;
     font-size: 1rem;
     color: #1976d2;
+}
+
+/* Update input and button fonts to match */
+input, 
+button,
+select,
+textarea {
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Make headings slightly bolder */
+h1, h2, h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+}
+
+/* Update modal content font */
+.modal-content {
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Make the total grade slightly bolder */
+#totalGrade {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
 }
