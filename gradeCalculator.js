@@ -21,8 +21,20 @@ function initializeCategoryManagement() {
 
     // Drag and Drop functionality
     function handleDragStart(e) {
+        // Prevent text selection during drag
+        e.stopPropagation();
+        
+        // Add visual feedback
         e.target.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', e.target.dataset.category);
+        
+        // Add a drag image (optional)
+        const dragImage = e.target.cloneNode(true);
+        dragImage.style.opacity = '0.5';
+        document.body.appendChild(dragImage);
+        e.dataTransfer.setDragImage(dragImage, 0, 0);
+        setTimeout(() => document.body.removeChild(dragImage), 0);
     }
 
     function handleDragEnd(e) {
@@ -48,19 +60,23 @@ function initializeCategoryManagement() {
 
     function handleDrop(e) {
         e.preventDefault();
-        const draggedCategory = e.dataTransfer.getData('text/plain');
-        const assignmentName = e.target.dataset.name;
+        e.stopPropagation();
         
-        // Update assignment category
-        const assignment = assignments.find(a => a.name === assignmentName);
-        if (assignment) {
-            assignment.category = draggedCategory;
-            assignment.weight = assignments.find(a => a.category === draggedCategory)?.weight || 0;
-            calculateTotal();
-            updateCategorySummaries();
+        const draggedCategory = e.dataTransfer.getData('text/plain');
+        const targetCategory = e.currentTarget.dataset.category;
+        
+        if (draggedCategory && targetCategory && draggedCategory !== targetCategory) {
+            // Update the assignment category
+            const assignment = assignments.find(a => a.name === e.currentTarget.dataset.name);
+            if (assignment) {
+                assignment.category = draggedCategory;
+                assignment.weight = assignments.find(a => a.category === draggedCategory)?.weight || 0;
+                calculateTotal();
+                updateCategorySummaries();
+            }
         }
         
-        e.target.classList.remove('drag-over');
+        e.currentTarget.classList.remove('drag-over');
     }
 
     // Add category button functionality
