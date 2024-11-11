@@ -157,23 +157,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateCategorySummaries(categories) {
-        // Create or update the category summaries container
         let summariesContainer = document.getElementById('categorySummaries');
         if (!summariesContainer) {
             summariesContainer = document.createElement('div');
             summariesContainer.id = 'categorySummaries';
-            document.querySelector('.calculator').insertBefore(summariesContainer, document.getElementById('addAssignment'));
+            document.querySelector('.calculator').insertBefore(
+                summariesContainer, 
+                document.querySelector('.results')
+            );
         }
-        summariesContainer.innerHTML = '';
+        summariesContainer.innerHTML = ''; // Clear previous summaries
 
-        // Create category dropdowns
         for (const category in categories) {
             const categoryData = categories[category];
             const percentage = (categoryData.totalScore / categoryData.totalPoints) * 100;
             const letterGrade = getLetterGrade(percentage);
 
+            const categoryAssignments = assignments.filter(a => a.category === category);
+            const assignmentsHTML = categoryAssignments.map((assignment, index) => `
+                <div class="assignment-detail">
+                    <span>${assignment.name}</span>
+                    <span>${assignment.score}/${assignment.total} (${((assignment.score/assignment.total)*100).toFixed(2)}%)</span>
+                    <button class="delete-btn" onclick="removeAssignment(${index})">×</button>
+                </div>
+            `).join('');
+
             const categoryDiv = document.createElement('details');
             categoryDiv.className = 'category-summary';
+            categoryDiv.open = true; // Open by default
             
             categoryDiv.innerHTML = `
                 <summary>
@@ -184,41 +195,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>Weight: ${categoryData.weight}%</p>
                     <p>Points: ${categoryData.totalScore}/${categoryData.totalPoints}</p>
                     <div class="category-assignments">
-                        ${getAssignmentsHTML(category)}
+                        ${assignmentsHTML} <!-- Only show assignments here -->
                     </div>
                 </div>
             `;
             
             summariesContainer.appendChild(categoryDiv);
         }
-    }
-
-    function getAssignmentsHTML(category) {
-        const assignments = Array.from(document.querySelectorAll('.assignment-row'))
-            .filter(row => row.querySelector('.assignment-name').value.startsWith(category));
-        
-        return assignments.map(assignment => {
-            const name = assignment.querySelector('.assignment-name').value.split(' - ')[1];
-            const score = assignment.querySelector('.score').value;
-            const total = assignment.querySelector('.total-points').value;
-            const percentage = ((score / total) * 100).toFixed(2);
-            
-            const assignmentDetail = document.createElement('div');
-            assignmentDetail.className = 'assignment-detail';
-            
-            assignmentDetail.innerHTML = `
-                <span>${name}</span>
-                <span>${score}/${total} (${percentage}%)</span>
-                <button class="delete-btn">×</button>
-            `;
-            
-            assignmentDetail.querySelector('.delete-btn').addEventListener('click', () => {
-                assignment.remove();
-                calculateTotal();
-            });
-
-            return assignmentDetail.outerHTML;
-        }).join('');
     }
 
     addAssignmentBtn.addEventListener('click', () => {
