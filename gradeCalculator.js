@@ -153,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update the total grade display with both percentage and letter grade
         const letterGrade = getLetterGrade(finalGrade);
         totalGradeSpan.textContent = `${finalGrade.toFixed(2)}% (${letterGrade})`;
+        updateGradeColor(finalGrade);
 
         // Update category summaries
         updateCategorySummaries(categories);
@@ -372,4 +373,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     };
+
+    function updateGradeColor(percentage) {
+        let color;
+        if (percentage >= 89.99) {
+            color = '#28a745';  // Green for A range
+        } else if (percentage >= 79.99) {
+            color = '#5cb85c';  // Light green for B range
+        } else if (percentage >= 69.99) {
+            color = '#ffc107';  // Yellow for C range
+        } else if (percentage >= 59.99) {
+            color = '#fd7e14';  // Orange for D range
+        } else {
+            color = '#dc3545';  // Red for F
+        }
+        totalGradeSpan.style.color = color;
+    }
 });
