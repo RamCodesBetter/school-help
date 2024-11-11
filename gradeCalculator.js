@@ -1,3 +1,102 @@
+function initializeCategoryManagement() {
+    const categoryList = document.getElementById('categoryList');
+    const addCategoryBtn = document.getElementById('addCategory');
+
+    function updateCategoryList() {
+        const categories = Array.from(new Set(assignments.map(a => a.category)));
+        categoryList.innerHTML = categories.map(category => `
+            <div class="category-item" draggable="true" data-category="${category}">
+                <span>${category}</span>
+                <span>(${assignments.find(a => a.category === category)?.weight}%)</span>
+                <button class="edit-category-btn">Edit</button>
+            </div>
+        `).join('');
+
+        // Add drag-drop listeners
+        document.querySelectorAll('.category-item').forEach(item => {
+            item.addEventListener('dragstart', handleDragStart);
+            item.addEventListener('dragend', handleDragEnd);
+        });
+    }
+
+    // Drag and Drop functionality
+    function handleDragStart(e) {
+        e.target.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', e.target.dataset.category);
+    }
+
+    function handleDragEnd(e) {
+        e.target.classList.remove('dragging');
+    }
+
+    // Add drag-drop listeners to assignments
+    document.querySelectorAll('.assignment-detail').forEach(assignment => {
+        assignment.setAttribute('draggable', true);
+        assignment.addEventListener('dragstart', handleAssignmentDragStart);
+        assignment.addEventListener('dragover', handleDragOver);
+        assignment.addEventListener('drop', handleDrop);
+    });
+
+    function handleAssignmentDragStart(e) {
+        e.dataTransfer.setData('text/plain', e.target.dataset.name);
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.target.classList.add('drag-over');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        const draggedCategory = e.dataTransfer.getData('text/plain');
+        const assignmentName = e.target.dataset.name;
+        
+        // Update assignment category
+        const assignment = assignments.find(a => a.name === assignmentName);
+        if (assignment) {
+            assignment.category = draggedCategory;
+            assignment.weight = assignments.find(a => a.category === draggedCategory)?.weight || 0;
+            calculateTotal();
+            updateCategorySummaries();
+        }
+        
+        e.target.classList.remove('drag-over');
+    }
+
+    // Add category button functionality
+    addCategoryBtn.addEventListener('click', () => {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Add New Category</h2>
+                <input type="text" id="categoryName" placeholder="Category Name">
+                <input type="number" id="categoryWeight" placeholder="Weight (%)" min="0" max="100">
+                <div class="modal-buttons">
+                    <button id="cancelAddCategory">Cancel</button>
+                    <button id="confirmAddCategory">Add Category</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#confirmAddCategory').onclick = () => {
+            const name = modal.querySelector('#categoryName').value;
+            const weight = parseFloat(modal.querySelector('#categoryWeight').value);
+            if (name && !isNaN(weight)) {
+                // Create a new empty category
+                updateCategoryList();
+                modal.remove();
+            }
+        };
+
+        modal.querySelector('#cancelAddCategory').onclick = () => modal.remove();
+    });
+
+    // Initialize category list
+    updateCategoryList();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const addAssignmentBtn = document.getElementById('addAssignment');
     const totalGradeSpan = document.getElementById('totalGrade');
@@ -327,12 +426,15 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
-    // Add this function to handle assignment deletion
+    // Update the removeAssignment function
     window.removeAssignment = function(assignmentName) {
         const index = assignments.findIndex(a => a.name === assignmentName);
         if (index > -1) {
-            assignments.splice(index, 1);
-            calculateTotal();
+            if (confirm(`Are you sure you want to delete "${assignmentName}"?`)) {
+                assignments.splice(index, 1);
+                calculateTotal();
+                updateCategorySummaries();
+            }
         }
     };
 
@@ -408,4 +510,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('gradingScale').addEventListener('change', () => {
         calculateTotal();
     });
+
+    initializeCategoryManagement();
 });
