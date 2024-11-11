@@ -203,13 +203,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const total = assignment.querySelector('.total-points').value;
             const percentage = ((score / total) * 100).toFixed(2);
             
-            return `
-                <div class="assignment-detail">
-                    <span>${name}</span>
-                    <span>${score}/${total} (${percentage}%)</span>
-                    <button class="delete-btn">×</button>
-                </div>
+            const assignmentDetail = document.createElement('div');
+            assignmentDetail.className = 'assignment-detail';
+            
+            assignmentDetail.innerHTML = `
+                <span>${name}</span>
+                <span>${score}/${total} (${percentage}%)</span>
+                <button class="delete-btn">×</button>
             `;
+            
+            assignmentDetail.querySelector('.delete-btn').addEventListener('click', () => {
+                assignment.remove();
+                calculateTotal();
+            });
+
+            return assignmentDetail.outerHTML;
         }).join('');
     }
 
