@@ -8,13 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const assignments = [];
         let currentCategory = '';
         let currentWeight = 0;
+        let currentAssignmentName = '';
         
         for (let i = 0; i < rows.length; i++) {
             const row = rows[i].trim();
             
-            // Check for category headers (e.g., " Summative", " Formative", " Lab Practices")
+            // Check for category headers and their weights
             if (row.match(/^\s*[A-Za-z\s]+$/)) {
-                // Look ahead for weight in next line
                 const nextRow = rows[i + 1]?.trim() || '';
                 const weightMatch = nextRow.match(/(\d+)%\s+of\s+Total/);
                 if (weightMatch) {
@@ -24,33 +24,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Match score patterns like "6/6 pts" or "Score: 6 out of 6 points"
-            const scoreMatch = row.match(/(\d+)\/(\d+)\s+pts/) || 
-                              row.match(/Score:\s*(\d+)\s+out of\s*(\d+)\s+points/);
+            // Look for assignment names
+            if (row.startsWith('Assignment')) {
+                currentAssignmentName = rows[i + 1]?.trim() || '';
+                continue;
+            }
+
+            // Match score patterns
+            const scoreMatch = row.match(/(\d+(?:\.\d+)?)\/(\d+)\s+pts/) || 
+                              row.match(/Score:\s*(\d+(?:\.\d+)?)\s+out of\s*(\d+)\s+points/);
             
-            if (scoreMatch) {
-                // Look back for assignment name
-                let j = i - 1;
-                let name = '';
-                while (j >= 0) {
-                    const prevLine = rows[j].trim();
-                    if (prevLine.startsWith('Assignment') || prevLine.startsWith('Quiz')) {
-                        name = rows[j + 1].trim();
-                        break;
-                    }
-                    j--;
-                }
-                
-                // Only add if we have a valid name and scores
-                if (name && !name.includes('Search') && !name.includes('Skip To Content')) {
+            if (scoreMatch && currentAssignmentName) {
+                // Only add if we have a valid name and it's not a duplicate
+                if (currentAssignmentName && 
+                    !currentAssignmentName.includes('Search') && 
+                    !currentAssignmentName.includes('Skip To Content') &&
+                    !assignments.some(a => a.name === currentAssignmentName)) {
+                    
                     assignments.push({
-                        name: name,
+                        name: currentAssignmentName,
                         score: parseFloat(scoreMatch[1]),
                         total: parseFloat(scoreMatch[2]),
                         weight: currentWeight,
                         category: currentCategory
                     });
                 }
+                currentAssignmentName = ''; // Reset the name after using it
             }
         }
         
@@ -262,9 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="modal-content">
                 <h2>Add New Assignment</h2>
                 <select id="categorySelect">
-                    <option value="Summative">Summative</option>
-                    <option value="Formative">Formative</option>
-                    <option value="Lab Practices">Lab Practices</option>
+                    ${Array.from(new Set(assignments.map(a => a.category))).map(category => `<option value="${category}">${category}</option>`).join('')}
                 </select>
                 <input type="text" id="assignmentName" placeholder="Assignment Name">
                 <input type="number" id="assignmentScore" placeholder="Score" min="0">
@@ -285,13 +282,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const total = parseFloat(modal.querySelector('#assignmentTotal').value);
             
             // Get weight based on category
-            let weight;
-            switch(category) {
-                case 'Summative': weight = 70; break;
-                case 'Formative': weight = 25; break;
-                case 'Lab Practices': weight = 5; break;
-                default: weight = 0;
-            }
+            const categoryData = assignments.find(a => a.category === category);
+            let weight = categoryData ? categoryData.weight : 0;
 
             if (name && !isNaN(score) && !isNaN(total)) {
                 const assignment = {
@@ -317,18 +309,27 @@ document.addEventListener('DOMContentLoaded', () => {
         calculateTotal();
     };
 
-    // Update the editAssignment function
+    // Update the editAssignment function to use the correct index
     window.editAssignment = function(index) {
+        // Find the correct assignment using the index
         const assignment = assignments[index];
+        if (!assignment) {
+            console.error('Assignment not found:', index);
+            return;
+        }
+
         const modal = document.createElement('div');
         modal.className = 'modal';
         modal.innerHTML = `
             <div class="modal-content">
                 <h2>Edit Assignment</h2>
                 <select id="editCategory" value="${assignment.category}">
-                    <option value="Summative" ${assignment.category === 'Summative' ? 'selected' : ''}>Summative</option>
-                    <option value="Formative" ${assignment.category === 'Formative' ? 'selected' : ''}>Formative</option>
-                    <option value="Lab Practices" ${assignment.category === 'Lab Practices' ? 'selected' : ''}>Lab Practices</option>
+                    ${Object.keys(assignments.reduce((acc, assignment) => {
+                        acc[assignment.category] = true;
+                        return acc;
+                    }, {})).map(category => `
+                    <option value="${category}" ${assignment.category === category ? 'selected' : ''}>${category}</option>
+                    `).join('')}
                 </select>
                 <input type="text" id="editName" value="${assignment.name}" placeholder="Assignment Name">
                 <div class="score-inputs">
@@ -361,11 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 assignment.score = newScore;
                 assignment.total = newTotal;
                 // Update weight based on category
-                switch(newCategory) {
-                    case 'Summative': assignment.weight = 70; break;
-                    case 'Formative': assignment.weight = 25; break;
-                    case 'Lab Practices': assignment.weight = 5; break;
-                }
+                assignment.weight = assignment.weight || 0; // Default to 0 if weight is not defined
                 calculateTotal();
                 updateCategorySummaries();
                 modal.remove();
