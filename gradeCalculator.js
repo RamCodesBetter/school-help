@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const addAssignmentBtn = document.getElementById('addAssignment');
     const totalGradeSpan = document.getElementById('totalGrade');
+    let assignments = []; // Store assignments in memory
 
     function parseCanvasGrades(text) {
         const rows = text.trim().split('\n');
@@ -58,73 +59,89 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('processPaste').addEventListener('click', () => {
         const pasteContent = document.getElementById('canvasPaste').value;
-        const assignments = parseCanvasGrades(pasteContent);
-        
-        // Only clear if we successfully parsed some assignments
-        if (assignments.length > 0) {
-            // Add parsed assignments
-            assignments.forEach(assignment => {
-                const row = createAssignmentRow();
-                const inputs = row.querySelectorAll('input');
-                inputs[0].value = `${assignment.category} - ${assignment.name}`;
-                inputs[1].value = assignment.score;
-                inputs[2].value = assignment.total;
-                inputs[3].value = assignment.weight;
-                document.body.appendChild(row);
-            });
-            
-            calculateTotal();
-        }
+        assignments = parseCanvasGrades(pasteContent); // Store parsed assignments
+        calculateTotal();
+        updateCategorySummaries(); // Update summaries after parsing
     });
 
-    function createAssignmentRow() {
+    function createAssignmentRow(assignment) {
         const row = document.createElement('div');
         row.className = 'assignment-row';
         
         row.innerHTML = `
-            <input type="text" placeholder="Assignment Name" class="assignment-name">
-            <input type="number" placeholder="Score" class="score" min="0" max="100">
-            <input type="number" placeholder="Total Points" class="total-points" min="0">
-            <input type="number" placeholder="Weight %" class="weight" min="0" max="100">
+            <input type="text" value="${assignment.name}" class="assignment-name" readonly>
+            <input type="number" value="${assignment.score}" class="score" min="0" max="100">
+            <input type="number" value="${assignment.total}" class="total-points" min="0">
+            <input type="number" value="${assignment.weight}" class="weight" min="0" max="100">
+            <button class="edit-btn">Edit</button>
             <button class="delete-btn">×</button>
         `;
 
         row.querySelector('.delete-btn').addEventListener('click', () => {
+            const index = assignments.indexOf(assignment);
+            if (index > -1) {
+                assignments.splice(index, 1); // Remove from assignments array
+            }
             row.remove();
             calculateTotal();
         });
 
-        row.querySelectorAll('input').forEach(input => {
-            input.addEventListener('input', calculateTotal);
+        row.querySelector('.edit-btn').addEventListener('click', () => {
+            openEditModal(assignment, row);
         });
 
         return row;
     }
 
+    function openEditModal(assignment, row) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Edit Assignment</h2>
+                <input type="text" id="editName" value="${assignment.name}">
+                <input type="number" id="editScore" value="${assignment.score}" min="0" max="100">
+                <input type="number" id="editTotal" value="${assignment.total}" min="0">
+                <input type="number" id="editWeight" value="${assignment.weight}" min="0" max="100">
+                <div class="modal-buttons">
+                    <button id="cancelEdit">Cancel</button>
+                    <button id="confirmEdit">Save</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#cancelEdit').onclick = () => modal.remove();
+        modal.querySelector('#confirmEdit').onclick = () => {
+            assignment.name = modal.querySelector('#editName').value;
+            assignment.score = parseFloat(modal.querySelector('#editScore').value);
+            assignment.total = parseFloat(modal.querySelector('#editTotal').value);
+            assignment.weight = parseFloat(modal.querySelector('#editWeight').value);
+            row.querySelector('.assignment-name').value = assignment.name; // Update row
+            row.querySelector('.score').value = assignment.score; // Update row
+            row.querySelector('.total-points').value = assignment.total; // Update row
+            row.querySelector('.weight').value = assignment.weight; // Update row
+            calculateTotal();
+            modal.remove();
+        };
+    }
+
     function calculateTotal() {
-        const assignments = document.querySelectorAll('.assignment-row');
         const categories = {};
         let finalGrade = 0;
 
         // First, group assignments by category and calculate category grades
         assignments.forEach(assignment => {
-            const name = assignment.querySelector('.assignment-name').value;
-            const score = parseFloat(assignment.querySelector('.score').value) || 0;
-            const totalPoints = parseFloat(assignment.querySelector('.total-points').value) || 0;
-            const weight = parseFloat(assignment.querySelector('.weight').value) || 0;
-            
-            const category = name.split(' - ')[0];
-            
+            const category = assignment.category;
             if (!categories[category]) {
                 categories[category] = {
                     totalScore: 0,
                     totalPoints: 0,
-                    weight: weight
+                    weight: assignment.weight
                 };
             }
-            
-            categories[category].totalScore += score;
-            categories[category].totalPoints += totalPoints;
+            categories[category].totalScore += assignment.score;
+            categories[category].totalPoints += assignment.total;
         });
 
         // Calculate final grade using category weights
@@ -208,14 +225,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const newAssignment = prompt("Enter new assignment details in the format: Category - Name, Score, Total Points, Weight");
         if (newAssignment) {
             const [categoryName, score, totalPoints, weight] = newAssignment.split(',').map(item => item.trim());
-            const row = createAssignmentRow();
-            const inputs = row.querySelectorAll('input');
-            inputs[0].value = categoryName;
-            inputs[1].value = score;
-            inputs[2].value = totalPoints;
-            inputs[3].value = weight;
-            document.body.appendChild(row);
-            calculateTotal();
+            const assignment = {
+                name: `${categoryName} - ${score}`,
+                score: parseFloat(score),
+                total: parseFloat(totalPoints),
+                weight: parseFloat(weight),
+                category: categoryName
+            };
+            assignments.push(assignment);
+            calculateTotal(); // Recalculate total after adding
+            updateCategorySummaries(); // Update summaries after adding
         }
     });
 });
