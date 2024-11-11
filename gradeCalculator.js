@@ -6,23 +6,53 @@ document.addEventListener('DOMContentLoaded', () => {
     function parseCanvasGrades(text) {
         const rows = text.trim().split('\n');
         const assignments = [];
+        let currentCategory = '';
+        let currentWeight = 0;
         
-        rows.forEach(row => {
-            // Match patterns like "Assignment Name Score: X out of Y points"
-            const match = row.match(/(.+?)\s+Score:\s*([\d.]+)\s*out of\s*([\d.]+)\s*points/i);
-            if (match) {
-                // Extract category weight from section headers (e.g., "Summative 70% of Total")
-                const categoryMatch = text.match(/(\w+)\s+(\d+)%\s+of\s+Total/i);
-                const weight = categoryMatch ? parseFloat(categoryMatch[2]) : 0;
-                
-                assignments.push({
-                    name: match[1].trim(),
-                    score: parseFloat(match[2]),
-                    total: parseFloat(match[3]),
-                    weight: weight
-                });
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i].trim();
+            
+            // Check for category headers (e.g., " Summative", " Formative", " Lab Practices")
+            if (row.match(/^\s*[A-Za-z\s]+$/)) {
+                // Look ahead for weight in next line
+                const nextRow = rows[i + 1]?.trim() || '';
+                const weightMatch = nextRow.match(/(\d+)%\s+of\s+Total/);
+                if (weightMatch) {
+                    currentCategory = row.trim();
+                    currentWeight = parseFloat(weightMatch[1]);
+                    continue;
+                }
             }
-        });
+
+            // Match score patterns like "6/6 pts" or "Score: 6 out of 6 points"
+            const scoreMatch = row.match(/(\d+)\/(\d+)\s+pts/) || 
+                              row.match(/Score:\s*(\d+)\s+out of\s*(\d+)\s+points/);
+            
+            if (scoreMatch) {
+                // Look back for assignment name
+                let j = i - 1;
+                let name = '';
+                while (j >= 0) {
+                    const prevLine = rows[j].trim();
+                    if (prevLine.startsWith('Assignment') || prevLine.startsWith('Quiz')) {
+                        name = rows[j + 1].trim();
+                        break;
+                    }
+                    j--;
+                }
+                
+                // Only add if we have a valid name and scores
+                if (name && !name.includes('Search') && !name.includes('Skip To Content')) {
+                    assignments.push({
+                        name: name,
+                        score: parseFloat(scoreMatch[1]),
+                        total: parseFloat(scoreMatch[2]),
+                        weight: currentWeight,
+                        category: currentCategory
+                    });
+                }
+            }
+        }
         
         return assignments;
     }
@@ -31,21 +61,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const pasteContent = document.getElementById('canvasPaste').value;
         const assignments = parseCanvasGrades(pasteContent);
         
-        // Clear existing assignments
-        assignmentList.innerHTML = '';
-        
-        // Add parsed assignments
-        assignments.forEach(assignment => {
-            const row = createAssignmentRow();
-            const inputs = row.querySelectorAll('input');
-            inputs[0].value = assignment.name;
-            inputs[1].value = assignment.score;
-            inputs[2].value = assignment.total;
-            inputs[3].value = assignment.weight;
-            assignmentList.appendChild(row);
-        });
-        
-        calculateTotal();
+        // Only clear if we successfully parsed some assignments
+        if (assignments.length > 0) {
+            assignmentList.innerHTML = '';
+            
+            // Add parsed assignments
+            assignments.forEach(assignment => {
+                const row = createAssignmentRow();
+                const inputs = row.querySelectorAll('input');
+                inputs[0].value = `${assignment.category} - ${assignment.name}`;
+                inputs[1].value = assignment.score;
+                inputs[2].value = assignment.total;
+                inputs[3].value = assignment.weight;
+                assignmentList.appendChild(row);
+            });
+            
+            calculateTotal();
+        }
     });
 
     function createAssignmentRow() {
