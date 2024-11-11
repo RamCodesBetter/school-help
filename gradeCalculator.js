@@ -106,23 +106,113 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function calculateTotal() {
         const assignments = document.querySelectorAll('.assignment-row');
-        let totalWeightedScore = 0;
-        let totalWeight = 0;
+        const categories = {};
+        let finalGrade = 0;
 
+        // First, group assignments by category and calculate category grades
         assignments.forEach(assignment => {
+            const name = assignment.querySelector('.assignment-name').value;
             const score = parseFloat(assignment.querySelector('.score').value) || 0;
             const totalPoints = parseFloat(assignment.querySelector('.total-points').value) || 0;
             const weight = parseFloat(assignment.querySelector('.weight').value) || 0;
-
-            if (totalPoints > 0 && weight > 0) {
-                const percentage = (score / totalPoints) * 100;
-                totalWeightedScore += percentage * (weight / 100);
-                totalWeight += weight;
+            
+            const category = name.split(' - ')[0];
+            
+            if (!categories[category]) {
+                categories[category] = {
+                    totalScore: 0,
+                    totalPoints: 0,
+                    weight: weight
+                };
             }
+            
+            categories[category].totalScore += score;
+            categories[category].totalPoints += totalPoints;
         });
 
-        const finalGrade = totalWeight > 0 ? (totalWeightedScore * 100 / totalWeight) / 100 : 0;
+        // Calculate final grade using category weights
+        for (const category in categories) {
+            const categoryData = categories[category];
+            const categoryPercentage = (categoryData.totalScore / categoryData.totalPoints) * 100;
+            finalGrade += categoryPercentage * (categoryData.weight / 100);
+        }
+
+        // Update the total grade display
         totalGradeSpan.textContent = `${finalGrade.toFixed(2)}%`;
+
+        // Update category summaries
+        updateCategorySummaries(categories);
+    }
+
+    function getLetterGrade(percentage) {
+        if (percentage >= 92.99) return 'A';
+        if (percentage >= 89.99) return 'A-';
+        if (percentage >= 86.99) return 'B+';
+        if (percentage >= 82.99) return 'B';
+        if (percentage >= 79.99) return 'B-';
+        if (percentage >= 76.99) return 'C+';
+        if (percentage >= 72.99) return 'C';
+        if (percentage >= 69.99) return 'C-';
+        if (percentage >= 66.99) return 'D+';
+        if (percentage >= 62.99) return 'D';
+        if (percentage >= 59.99) return 'D-';
+        return 'F';
+    }
+
+    function updateCategorySummaries(categories) {
+        // Create or update the category summaries container
+        let summariesContainer = document.getElementById('categorySummaries');
+        if (!summariesContainer) {
+            summariesContainer = document.createElement('div');
+            summariesContainer.id = 'categorySummaries';
+            document.querySelector('.calculator').insertBefore(summariesContainer, document.getElementById('addAssignment'));
+        }
+        summariesContainer.innerHTML = '';
+
+        // Create category dropdowns
+        for (const category in categories) {
+            const categoryData = categories[category];
+            const percentage = (categoryData.totalScore / categoryData.totalPoints) * 100;
+            const letterGrade = getLetterGrade(percentage);
+
+            const categoryDiv = document.createElement('details');
+            categoryDiv.className = 'category-summary';
+            
+            categoryDiv.innerHTML = `
+                <summary>
+                    <span class="category-name">${category}</span>
+                    <span class="category-grade">${percentage.toFixed(2)}% (${letterGrade})</span>
+                </summary>
+                <div class="category-details">
+                    <p>Weight: ${categoryData.weight}%</p>
+                    <p>Points: ${categoryData.totalScore}/${categoryData.totalPoints}</p>
+                    <div class="category-assignments">
+                        ${getAssignmentsHTML(category)}
+                    </div>
+                </div>
+            `;
+            
+            summariesContainer.appendChild(categoryDiv);
+        }
+    }
+
+    function getAssignmentsHTML(category) {
+        const assignments = Array.from(document.querySelectorAll('.assignment-row'))
+            .filter(row => row.querySelector('.assignment-name').value.startsWith(category));
+        
+        return assignments.map(assignment => {
+            const name = assignment.querySelector('.assignment-name').value.split(' - ')[1];
+            const score = assignment.querySelector('.score').value;
+            const total = assignment.querySelector('.total-points').value;
+            const percentage = ((score / total) * 100).toFixed(2);
+            
+            return `
+                <div class="assignment-detail">
+                    <span>${name}</span>
+                    <span>${score}/${total} (${percentage}%)</span>
+                </div>
+            `;
+        }).join('');
     }
 
     addAssignmentBtn.addEventListener('click', () => {

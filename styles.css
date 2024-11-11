@@ -93,3 +93,47 @@ button:hover {
     border-radius: 4px;
     resize: vertical;
 }
+
+.category-summary {
+    margin: 1rem 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.category-summary summary {
+    padding: 1rem;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.category-details {
+    padding: 1rem;
+}
+
+.category-assignments {
+    margin-top: 1rem;
+}
+
+.assignment-detail {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.assignment-detail:last-child {
+    border-bottom: none;
+}
+
+#categorySummaries {
+    margin: 2rem 0;
+    border-top: 2px solid #eee;
+    padding-top: 2rem;
+}
+
+.category-grade {
+    font-weight: bold;
+}
