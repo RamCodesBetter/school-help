@@ -127,10 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateTotal() {
-        const categories = {};
         let finalGrade = 0;
-
-        // First, group assignments by category and calculate category grades
+        const categories = {};
+        
+        // Group assignments by category
         assignments.forEach(assignment => {
             const category = assignment.category;
             if (!categories[category]) {
@@ -151,8 +151,9 @@ document.addEventListener('DOMContentLoaded', () => {
             finalGrade += categoryPercentage * (categoryData.weight / 100);
         }
 
-        // Update the total grade display
-        totalGradeSpan.textContent = `${finalGrade.toFixed(2)}%`;
+        // Update the total grade display with both percentage and letter grade
+        const letterGrade = getLetterGrade(finalGrade);
+        totalGradeSpan.textContent = `${finalGrade.toFixed(2)}% (${letterGrade})`;
 
         // Update category summaries
         updateCategorySummaries(categories);
