@@ -159,19 +159,42 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCategorySummaries(categories);
     }
 
+    const gradingScales = {
+        all: (percentage) => {
+            if (percentage >= 93) return 'A';
+            if (percentage >= 90) return 'A-';
+            if (percentage >= 87) return 'B+';
+            if (percentage >= 83) return 'B';
+            if (percentage >= 80) return 'B-';
+            if (percentage >= 77) return 'C+';
+            if (percentage >= 73) return 'C';
+            if (percentage >= 70) return 'C-';
+            if (percentage >= 67) return 'D+';
+            if (percentage >= 60) return 'D';
+            return 'F';
+        },
+        noMinus: (percentage) => {
+            if (percentage >= 90) return 'A';
+            if (percentage >= 87) return 'B+';
+            if (percentage >= 80) return 'B';
+            if (percentage >= 77) return 'C+';
+            if (percentage >= 70) return 'C';
+            if (percentage >= 67) return 'D+';
+            if (percentage >= 60) return 'D';
+            return 'F';
+        },
+        simple: (percentage) => {
+            if (percentage >= 90) return 'A';
+            if (percentage >= 80) return 'B';
+            if (percentage >= 70) return 'C';
+            if (percentage >= 60) return 'D';
+            return 'F';
+        }
+    };
+
     function getLetterGrade(percentage) {
-        if (percentage >= 92.99) return 'A';
-        if (percentage >= 89.99) return 'A-';
-        if (percentage >= 86.99) return 'B+';
-        if (percentage >= 82.99) return 'B';
-        if (percentage >= 79.99) return 'B-';
-        if (percentage >= 76.99) return 'C+';
-        if (percentage >= 72.99) return 'C';
-        if (percentage >= 69.99) return 'C-';
-        if (percentage >= 66.99) return 'D+';
-        if (percentage >= 62.99) return 'D';
-        if (percentage >= 59.99) return 'D-';
-        return 'F';
+        const scale = document.getElementById('gradingScale').value;
+        return gradingScales[scale](percentage);
     }
 
     function updateCategorySummaries(categories = {}) {
@@ -375,18 +398,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function updateGradeColor(percentage) {
-        let color;
-        if (percentage >= 89.99) {
-            color = '#28a745';  // Green for A range
-        } else if (percentage >= 79.99) {
-            color = '#5cb85c';  // Light green for B range
-        } else if (percentage >= 69.99) {
-            color = '#ffc107';  // Yellow for C range
-        } else if (percentage >= 59.99) {
-            color = '#fd7e14';  // Orange for D range
-        } else {
-            color = '#dc3545';  // Red for F
-        }
-        totalGradeSpan.style.color = color;
+        // Create a color gradient from red to green
+        const red = percentage < 60 ? 255 : Math.round(255 * (100 - percentage) / 40);
+        const green = percentage < 60 ? Math.round(255 * percentage / 60) : 255;
+        totalGradeSpan.style.color = `rgb(${red}, ${green}, 0)`;
     }
+
+    // Add event listener for grading scale changes
+    document.getElementById('gradingScale').addEventListener('change', () => {
+        calculateTotal();
+    });
 });
