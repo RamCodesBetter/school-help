@@ -185,29 +185,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         summariesContainer.innerHTML = '';
 
-        // Ensure all categories are shown even if empty
-        const allCategories = {
-            'Summative': { weight: 70, totalScore: 0, totalPoints: 0 },
-            'Formative': { weight: 25, totalScore: 0, totalPoints: 0 },
-            'Lab Practices': { weight: 5, totalScore: 0, totalPoints: 0 },
-            ...categories
-        };
+        // Initialize category totals based on existing assignments
+        const categoryTotals = {};
+        
+        // First pass: collect unique categories and their weights
+        assignments.forEach(assignment => {
+            if (!categoryTotals[assignment.category]) {
+                categoryTotals[assignment.category] = {
+                    weight: assignment.weight,
+                    totalScore: 0,
+                    totalPoints: 0
+                };
+            }
+        });
 
-        for (const category in allCategories) {
-            const categoryData = allCategories[category];
+        // Second pass: calculate totals for each category
+        assignments.forEach(assignment => {
+            const category = assignment.category;
+            categoryTotals[category].totalScore += assignment.score;
+            categoryTotals[category].totalPoints += assignment.total;
+        });
+
+        // Create category summaries
+        for (const category in categoryTotals) {
+            const categoryData = categoryTotals[category];
             const percentage = categoryData.totalPoints > 0 
                 ? (categoryData.totalScore / categoryData.totalPoints) * 100 
                 : 0;
             const letterGrade = getLetterGrade(percentage);
 
             const categoryAssignments = assignments.filter(a => a.category === category);
-            const assignmentsHTML = categoryAssignments.map((assignment, index) => `
-                <div class="assignment-detail">
-                    <span>${assignment.name}</span>
-                    <span>${assignment.score}/${assignment.total} (${((assignment.score/assignment.total)*100).toFixed(2)}%)</span>
-                    <button class="delete-btn" onclick="removeAssignment(${index})">×</button>
-                </div>
-            `).join('');
+            const assignmentsHTML = categoryAssignments.map((assignment, index) => {
+                const assignmentPercentage = (assignment.score / assignment.total) * 100;
+                const assignmentLetterGrade = getLetterGrade(assignmentPercentage);
+                return `
+                    <div class="assignment-detail">
+                        <span class="assignment-name">${assignment.name}</span>
+                        <div class="assignment-scores">
+                            <span>${assignment.score}/${assignment.total}</span>
+                            <span>(${assignmentPercentage.toFixed(2)}%)</span>
+                            <span>${assignmentLetterGrade}</span>
+                            <button class="edit-btn" onclick="editAssignment(${index})">Edit</button>
+                            <button class="delete-btn" onclick="removeAssignment(${index})">×</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
 
             const categoryDiv = document.createElement('details');
             categoryDiv.className = 'category-summary';
@@ -291,5 +314,43 @@ document.addEventListener('DOMContentLoaded', () => {
     window.removeAssignment = function(index) {
         assignments.splice(index, 1);
         calculateTotal();
+    };
+
+    // Add this function to handle assignment editing
+    window.editAssignment = function(index) {
+        const assignment = assignments[index];
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Edit Assignment</h2>
+                <input type="text" id="editName" value="${assignment.name}" placeholder="Assignment Name">
+                <input type="number" id="editScore" value="${assignment.score}" min="0" step="any" placeholder="Score">
+                <input type="number" id="editTotal" value="${assignment.total}" min="0" step="any" placeholder="Total Points">
+                <div class="modal-buttons">
+                    <button id="cancelEdit">Cancel</button>
+                    <button id="confirmEdit">Save</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#cancelEdit').onclick = () => modal.remove();
+        modal.querySelector('#confirmEdit').onclick = () => {
+            const newName = modal.querySelector('#editName').value;
+            const newScore = parseFloat(modal.querySelector('#editScore').value);
+            const newTotal = parseFloat(modal.querySelector('#editTotal').value);
+
+            if (newName && !isNaN(newScore) && !isNaN(newTotal)) {
+                assignment.name = newName;
+                assignment.score = newScore;
+                assignment.total = newTotal;
+                calculateTotal();
+                updateCategorySummaries();
+                modal.remove();
+            } else {
+                alert('Please fill in all fields correctly');
+            }
+        };
     };
 });

@@ -121,21 +121,51 @@ button:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem;
+    padding: 0.75rem;
     border-bottom: 1px solid #eee;
+    font-size: 0.95rem;
 }
 
-.assignment-detail .delete-btn {
+.assignment-name {
+    flex: 1;
+    margin-right: 1rem;
+}
+
+.assignment-scores {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.assignment-scores span {
+    white-space: nowrap;
+}
+
+.edit-btn {
+    padding: 0.25rem 0.5rem;
+    background-color: #ffc107;
+    color: black;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 0.5rem;
+}
+
+.edit-btn:hover {
+    background-color: #e0a800;
+}
+
+.delete-btn {
     padding: 0.25rem 0.5rem;
     background-color: #dc3545;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    margin-left: 1rem;
+    margin-left: 0.5rem;
 }
 
-.assignment-detail .delete-btn:hover {
+.delete-btn:hover {
     background-color: #c82333;
 }
 
