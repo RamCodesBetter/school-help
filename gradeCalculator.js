@@ -173,21 +173,31 @@ document.addEventListener('DOMContentLoaded', () => {
         return 'F';
     }
 
-    function updateCategorySummaries(categories) {
+    function updateCategorySummaries(categories = {}) {
         let summariesContainer = document.getElementById('categorySummaries');
         if (!summariesContainer) {
             summariesContainer = document.createElement('div');
             summariesContainer.id = 'categorySummaries';
             document.querySelector('.calculator').insertBefore(
-                summariesContainer, 
+                summariesContainer,
                 document.querySelector('.results')
             );
         }
-        summariesContainer.innerHTML = ''; // Clear previous summaries
+        summariesContainer.innerHTML = '';
 
-        for (const category in categories) {
-            const categoryData = categories[category];
-            const percentage = (categoryData.totalScore / categoryData.totalPoints) * 100;
+        // Ensure all categories are shown even if empty
+        const allCategories = {
+            'Summative': { weight: 70, totalScore: 0, totalPoints: 0 },
+            'Formative': { weight: 25, totalScore: 0, totalPoints: 0 },
+            'Lab Practices': { weight: 5, totalScore: 0, totalPoints: 0 },
+            ...categories
+        };
+
+        for (const category in allCategories) {
+            const categoryData = allCategories[category];
+            const percentage = categoryData.totalPoints > 0 
+                ? (categoryData.totalScore / categoryData.totalPoints) * 100 
+                : 0;
             const letterGrade = getLetterGrade(percentage);
 
             const categoryAssignments = assignments.filter(a => a.category === category);
@@ -201,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const categoryDiv = document.createElement('details');
             categoryDiv.className = 'category-summary';
-            categoryDiv.open = true; // Open by default
+            categoryDiv.open = true;
             
             categoryDiv.innerHTML = `
                 <summary>
@@ -212,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>Weight: ${categoryData.weight}%</p>
                     <p>Points: ${categoryData.totalScore}/${categoryData.totalPoints}</p>
                     <div class="category-assignments">
-                        ${assignmentsHTML} <!-- Only show assignments here -->
+                        ${assignmentsHTML}
                     </div>
                 </div>
             `;
@@ -222,19 +232,64 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     addAssignmentBtn.addEventListener('click', () => {
-        const newAssignment = prompt("Enter new assignment details in the format: Category - Name, Score, Total Points, Weight");
-        if (newAssignment) {
-            const [categoryName, score, totalPoints, weight] = newAssignment.split(',').map(item => item.trim());
-            const assignment = {
-                name: `${categoryName} - ${score}`,
-                score: parseFloat(score),
-                total: parseFloat(totalPoints),
-                weight: parseFloat(weight),
-                category: categoryName
-            };
-            assignments.push(assignment);
-            calculateTotal(); // Recalculate total after adding
-            updateCategorySummaries(); // Update summaries after adding
-        }
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Add New Assignment</h2>
+                <select id="categorySelect">
+                    <option value="Summative">Summative</option>
+                    <option value="Formative">Formative</option>
+                    <option value="Lab Practices">Lab Practices</option>
+                </select>
+                <input type="text" id="assignmentName" placeholder="Assignment Name">
+                <input type="number" id="assignmentScore" placeholder="Score" min="0">
+                <input type="number" id="assignmentTotal" placeholder="Total Points" min="0">
+                <div class="modal-buttons">
+                    <button id="cancelAdd">Cancel</button>
+                    <button id="confirmAdd">Add Assignment</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#cancelAdd').onclick = () => modal.remove();
+        modal.querySelector('#confirmAdd').onclick = () => {
+            const category = modal.querySelector('#categorySelect').value;
+            const name = modal.querySelector('#assignmentName').value;
+            const score = parseFloat(modal.querySelector('#assignmentScore').value);
+            const total = parseFloat(modal.querySelector('#assignmentTotal').value);
+            
+            // Get weight based on category
+            let weight;
+            switch(category) {
+                case 'Summative': weight = 70; break;
+                case 'Formative': weight = 25; break;
+                case 'Lab Practices': weight = 5; break;
+                default: weight = 0;
+            }
+
+            if (name && !isNaN(score) && !isNaN(total)) {
+                const assignment = {
+                    name: name,
+                    score: score,
+                    total: total,
+                    weight: weight,
+                    category: category
+                };
+                assignments.push(assignment);
+                calculateTotal();
+                updateCategorySummaries();
+                modal.remove();
+            } else {
+                alert('Please fill in all fields correctly');
+            }
+        };
     });
+
+    // Add this function to handle assignment deletion
+    window.removeAssignment = function(index) {
+        assignments.splice(index, 1);
+        calculateTotal();
+    };
 });
