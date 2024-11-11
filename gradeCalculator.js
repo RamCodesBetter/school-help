@@ -215,18 +215,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const letterGrade = getLetterGrade(percentage);
 
             const categoryAssignments = assignments.filter(a => a.category === category);
-            const assignmentsHTML = categoryAssignments.map((assignment, index) => {
+            const assignmentsHTML = categoryAssignments.map((assignment) => {
                 const assignmentPercentage = (assignment.score / assignment.total) * 100;
                 const assignmentLetterGrade = getLetterGrade(assignmentPercentage);
                 return `
-                    <div class="assignment-detail">
+                    <div class="assignment-detail" data-name="${assignment.name}">
                         <span class="assignment-name">${assignment.name}</span>
                         <div class="assignment-scores">
                             <span>${assignment.score}/${assignment.total}</span>
                             <span>(${assignmentPercentage.toFixed(2)}%)</span>
                             <span>${assignmentLetterGrade}</span>
-                            <button class="edit-btn" onclick="editAssignment(${index})">Edit</button>
-                            <button class="delete-btn" onclick="removeAssignment(${index})">×</button>
+                            <button class="edit-btn" onclick="editAssignment('${assignment.name}')">Edit</button>
+                            <button class="delete-btn" onclick="removeAssignment('${assignment.name}')">×</button>
                         </div>
                     </div>
                 `;
@@ -304,17 +304,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Add this function to handle assignment deletion
-    window.removeAssignment = function(index) {
-        assignments.splice(index, 1);
-        calculateTotal();
+    window.removeAssignment = function(assignmentName) {
+        const index = assignments.findIndex(a => a.name === assignmentName);
+        if (index > -1) {
+            assignments.splice(index, 1);
+            calculateTotal();
+        }
     };
 
-    // Update the editAssignment function to use the correct index
-    window.editAssignment = function(index) {
-        // Find the correct assignment using the index
-        const assignment = assignments[index];
+    // Update the editAssignment function to use the assignment name instead of index
+    window.editAssignment = function(assignmentName) {
+        // Find the assignment by name
+        const assignment = assignments.find(a => a.name === assignmentName);
         if (!assignment) {
-            console.error('Assignment not found:', index);
+            console.error('Assignment not found:', assignmentName);
             return;
         }
 
@@ -324,11 +327,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="modal-content">
                 <h2>Edit Assignment</h2>
                 <select id="editCategory" value="${assignment.category}">
-                    ${Object.keys(assignments.reduce((acc, assignment) => {
-                        acc[assignment.category] = true;
+                    ${Object.keys(assignments.reduce((acc, a) => {
+                        acc[a.category] = true;
                         return acc;
                     }, {})).map(category => `
-                    <option value="${category}" ${assignment.category === category ? 'selected' : ''}>${category}</option>
+                        <option value="${category}" ${assignment.category === category ? 'selected' : ''}>${category}</option>
                     `).join('')}
                 </select>
                 <input type="text" id="editName" value="${assignment.name}" placeholder="Assignment Name">
@@ -361,8 +364,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 assignment.name = newName;
                 assignment.score = newScore;
                 assignment.total = newTotal;
-                // Update weight based on category
-                assignment.weight = assignment.weight || 0; // Default to 0 if weight is not defined
                 calculateTotal();
                 updateCategorySummaries();
                 modal.remove();
