@@ -84,9 +84,23 @@ function initializeCategoryManagement() {
             const name = modal.querySelector('#categoryName').value;
             const weight = parseFloat(modal.querySelector('#categoryWeight').value);
             if (name && !isNaN(weight)) {
-                // Create a new empty category
+                // Create a new empty category by adding a placeholder assignment
+                assignments.push({
+                    name: `${name} (placeholder)`,
+                    score: 0,
+                    total: 0,
+                    category: name,
+                    weight: weight,
+                    isPlaceholder: true  // Add this flag to identify placeholder assignments
+                });
+                
+                // Update the UI
                 updateCategoryList();
+                updateCategorySummaries();
+                calculateTotal();
                 modal.remove();
+            } else {
+                alert('Please fill in all fields correctly');
             }
         };
 
