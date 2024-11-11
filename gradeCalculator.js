@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
         calculateTotal();
     };
 
-    // Add this function to handle assignment editing
+    // Update the editAssignment function
     window.editAssignment = function(index) {
         const assignment = assignments[index];
         const modal = document.createElement('div');
@@ -324,9 +324,21 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.innerHTML = `
             <div class="modal-content">
                 <h2>Edit Assignment</h2>
+                <select id="editCategory" value="${assignment.category}">
+                    <option value="Summative" ${assignment.category === 'Summative' ? 'selected' : ''}>Summative</option>
+                    <option value="Formative" ${assignment.category === 'Formative' ? 'selected' : ''}>Formative</option>
+                    <option value="Lab Practices" ${assignment.category === 'Lab Practices' ? 'selected' : ''}>Lab Practices</option>
+                </select>
                 <input type="text" id="editName" value="${assignment.name}" placeholder="Assignment Name">
-                <input type="number" id="editScore" value="${assignment.score}" min="0" step="any" placeholder="Score">
-                <input type="number" id="editTotal" value="${assignment.total}" min="0" step="any" placeholder="Total Points">
+                <div class="score-inputs">
+                    <input type="number" id="editScore" value="${assignment.score}" min="0" step="any" placeholder="Score">
+                    <span>/</span>
+                    <input type="number" id="editTotal" value="${assignment.total}" min="0" step="any" placeholder="Total Points">
+                </div>
+                <div class="current-details">
+                    <p>Current Grade: ${((assignment.score/assignment.total)*100).toFixed(2)}% (${getLetterGrade((assignment.score/assignment.total)*100)})</p>
+                    <p>Category Weight: ${assignment.weight}%</p>
+                </div>
                 <div class="modal-buttons">
                     <button id="cancelEdit">Cancel</button>
                     <button id="confirmEdit">Save</button>
@@ -337,14 +349,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         modal.querySelector('#cancelEdit').onclick = () => modal.remove();
         modal.querySelector('#confirmEdit').onclick = () => {
+            const newCategory = modal.querySelector('#editCategory').value;
             const newName = modal.querySelector('#editName').value;
             const newScore = parseFloat(modal.querySelector('#editScore').value);
             const newTotal = parseFloat(modal.querySelector('#editTotal').value);
 
             if (newName && !isNaN(newScore) && !isNaN(newTotal)) {
+                assignment.category = newCategory;
                 assignment.name = newName;
                 assignment.score = newScore;
                 assignment.total = newTotal;
+                // Update weight based on category
+                switch(newCategory) {
+                    case 'Summative': assignment.weight = 70; break;
+                    case 'Formative': assignment.weight = 25; break;
+                    case 'Lab Practices': assignment.weight = 5; break;
+                }
                 calculateTotal();
                 updateCategorySummaries();
                 modal.remove();
