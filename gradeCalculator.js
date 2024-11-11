@@ -80,28 +80,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function createAssignmentRow() {
-        const row = document.createElement('div');
-        row.className = 'assignment-row';
+    function createAssignmentRow(category) {
+        const div = document.createElement('div');
+        div.className = 'assignment-detail';
         
-        row.innerHTML = `
-            <input type="text" placeholder="Assignment Name" class="assignment-name">
-            <input type="number" placeholder="Score" class="score" min="0" max="100">
-            <input type="number" placeholder="Total Points" class="total-points" min="0">
-            <input type="number" placeholder="Weight %" class="weight" min="0" max="100">
+        div.innerHTML = `
+            <span class="assignment-name"></span>
+            <span class="assignment-score"></span>
             <button class="delete-btn">×</button>
         `;
 
-        row.querySelector('.delete-btn').addEventListener('click', () => {
-            row.remove();
-            calculateTotal();
-        });
+        return div;
+    }
 
-        row.querySelectorAll('input').forEach(input => {
-            input.addEventListener('input', calculateTotal);
-        });
+    function addAssignmentModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Add New Assignment</h2>
+                <select id="categorySelect">
+                    <option value="Summative" data-weight="70">Summative</option>
+                    <option value="Formative" data-weight="25">Formative</option>
+                    <option value="Lab Practices" data-weight="5">Lab Practices</option>
+                </select>
+                <input type="text" id="assignmentName" placeholder="Assignment Name">
+                <input type="number" id="scoreInput" placeholder="Score" min="0">
+                <input type="number" id="totalInput" placeholder="Total Points" min="0">
+                <div class="modal-buttons">
+                    <button id="cancelAdd">Cancel</button>
+                    <button id="confirmAdd">Add Assignment</button>
+                </div>
+            </div>
+        `;
 
-        return row;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#cancelAdd').onclick = () => modal.remove();
+        modal.querySelector('#confirmAdd').onclick = () => {
+            const category = modal.querySelector('#categorySelect').value;
+            const name = modal.querySelector('#assignmentName').value;
+            const score = modal.querySelector('#scoreInput').value;
+            const total = modal.querySelector('#totalInput').value;
+            const weight = modal.querySelector('#categorySelect').selectedOptions[0].dataset.weight;
+
+            if (name && score && total) {
+                const assignment = {
+                    name: `${category} - ${name}`,
+                    score: parseFloat(score),
+                    total: parseFloat(total),
+                    weight: parseFloat(weight)
+                };
+                
+                // Add the assignment and recalculate
+                addAssignment(assignment);
+                calculateTotal();
+                modal.remove();
+            }
+        };
     }
 
     function calculateTotal() {
@@ -160,16 +197,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateCategorySummaries(categories) {
-        // Create or update the category summaries container
         let summariesContainer = document.getElementById('categorySummaries');
         if (!summariesContainer) {
             summariesContainer = document.createElement('div');
             summariesContainer.id = 'categorySummaries';
-            document.querySelector('.calculator').insertBefore(summariesContainer, document.getElementById('addAssignment'));
+            document.querySelector('.calculator').appendChild(summariesContainer);
         }
         summariesContainer.innerHTML = '';
 
-        // Create category dropdowns
         for (const category in categories) {
             const categoryData = categories[category];
             const percentage = (categoryData.totalScore / categoryData.totalPoints) * 100;
@@ -177,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const categoryDiv = document.createElement('details');
             categoryDiv.className = 'category-summary';
+            categoryDiv.open = true; // Open by default
             
             categoryDiv.innerHTML = `
                 <summary>
@@ -216,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     addAssignmentBtn.addEventListener('click', () => {
-        assignmentList.appendChild(createAssignmentRow());
+        addAssignmentModal();
     });
 
     // Add initial row
