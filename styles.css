@@ -126,23 +126,23 @@ button:hover {
 }
 
 .category-summary {
-    margin: 1rem 0;
+    margin-bottom: 0.5rem;
     border: 1px solid #90caf9;
     border-radius: 8px;
-    margin-bottom: 1rem;
-    padding: 1rem;
-    background-color: #f8fbff;
+    overflow: hidden;
 }
 
 .category-summary summary {
     padding: 1rem;
-    background-color: #f8f9fa;
+    background-color: #f8fbff;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: #1976d2;
-    font-weight: 600;
+}
+
+.category-summary summary:hover {
+    background-color: #e3f2fd;
 }
 
 .category-details {
@@ -453,4 +453,38 @@ h1, h2, h3 {
 
 #confirmDelete:hover {
     background-color: #c82333;
+}
+
+/* Add styles for the instructions */
+.instructions {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.1);
+    border: 1px solid #90caf9;
+}
+
+.instructions h2 {
+    color: #1976d2;
+    margin-bottom: 1rem;
+}
+
+.instructions ol {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.instructions li {
+    margin-bottom: 0.5rem;
+    color: #444;
+}
+
+.instructions .tip {
+    background-color: #e3f2fd;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-top: 1rem;
+    color: #1565c0;
+    font-weight: 500;
 }

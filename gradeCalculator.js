@@ -241,11 +241,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="category-name">${category}</span>
                     <span class="category-grade">${percentage.toFixed(2)}% (${letterGrade})</span>
                 </summary>
-                <div class="category-assignments" data-category="${category}">
-                    ${assignmentsHTML}
+                <div class="category-details">
+                    <p>Weight: ${categoryData.weight}%</p>
+                    <p>Points: ${categoryData.totalScore}/${categoryData.totalPoints}</p>
+                    <div class="category-assignments" data-category="${category}">
+                        ${assignmentsHTML}
+                    </div>
                 </div>
             `;
-
+            
             summariesContainer.appendChild(categoryDiv);
         });
 
@@ -292,6 +296,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+
+        initializeDragAndDrop();
     }
 
     // Helper function to calculate category grade
