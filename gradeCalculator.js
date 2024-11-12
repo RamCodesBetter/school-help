@@ -3,6 +3,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalGradeSpan = document.getElementById('totalGrade');
     let assignments = []; // Store assignments in memory
 
+    const themeToggle = document.getElementById('themeToggle');
+    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+    // Set initial theme
+    document.documentElement.setAttribute('data-theme', 
+        localStorage.getItem('theme') || 
+        (prefersDarkScheme.matches ? 'dark' : 'light')
+    );
+
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        
+        // Update icon
+        themeToggle.querySelector('.theme-icon').textContent = 
+            newTheme === 'light' ? '🌙' : '☀️';
+    });
+
     function parseCanvasGrades(text) {
         const rows = text.trim().split('\n');
         const assignments = [];
@@ -57,10 +78,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('processPaste').addEventListener('click', () => {
-        const pasteContent = document.getElementById('canvasPaste').value;
-        assignments = parseCanvasGrades(pasteContent); // Store parsed assignments
-        calculateTotal();
-        updateCategorySummaries(); // Update summaries after parsing
+        const button = document.getElementById('processPaste');
+        button.disabled = true;
+        button.textContent = 'Processing...';
+        
+        try {
+            const pasteContent = document.getElementById('canvasPaste').value;
+            assignments = parseCanvasGrades(pasteContent);
+            calculateTotal();
+            updateCategorySummaries();
+        } finally {
+            button.disabled = false;
+            button.textContent = 'Process Canvas Grades';
+        }
     });
 
     function createAssignmentRow(assignment) {

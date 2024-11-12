@@ -1,6 +1,27 @@
 /* At the very top of the file */
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap');
 
+/* Add theme variables at the top */
+:root {
+    --bg-primary: #e3f2fd;
+    --bg-secondary: #f1f8ff;
+    --text-primary: #333;
+    --text-secondary: #666;
+    --accent-primary: #1976d2;
+    --accent-secondary: #90caf9;
+    --border-color: #64b5f6;
+}
+
+[data-theme="dark"] {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --accent-primary: #64b5f6;
+    --accent-secondary: #1976d2;
+    --border-color: #404040;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -10,7 +31,8 @@
 body {
     font-family: 'Space Grotesk', sans-serif;
     line-height: 1.6;
-    background-color: #e3f2fd;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 .container {
@@ -30,11 +52,11 @@ h1 {
     display: grid;
     grid-template-columns: minmax(400px, 1fr) 350px;
     gap: 2rem;
-    background-color: #f1f8ff;
+    background-color: var(--bg-secondary);
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
-    border: 1px solid #64b5f6;
+    border: 1px solid var(--border-color);
 }
 
 .left-section {
@@ -487,4 +509,25 @@ h1, h2, h3 {
     margin-top: 1rem;
     color: #1565c0;
     font-weight: 500;
+}
+
+/* Theme toggle button styles */
+.theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+}
+
+.theme-toggle button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.theme-toggle button:hover {
+    background-color: var(--accent-secondary);
 }
