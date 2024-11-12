@@ -10,7 +10,7 @@
 body {
     font-family: 'Space Grotesk', sans-serif;
     line-height: 1.6;
-    background-color: #e3f2fd;
+    background-color: #e8f5fe;
 }
 
 .container {
@@ -30,11 +30,11 @@ h1 {
     display: grid;
     grid-template-columns: 200px minmax(300px, 1fr) 400px;
     gap: 2rem;
-    background-color: #f8faff;
+    background-color: #f0f8ff;
     padding: 2rem;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.15);
-    border: 1px solid #90caf9;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
+    border: 1px solid #64b5f6;
     max-width: 100%;
     overflow-x: hidden;
 }
@@ -168,14 +168,18 @@ button:hover {
     border-bottom: 1px solid #eee;
     font-size: 0.95rem;
     background-color: #ffffff;
-    border: 1px solid #e3f2fd;
+    border: 1px solid #bbdefb;
     margin-bottom: 0.5rem;
     transition: all 0.2s;
+    border-radius: 4px;
+    cursor: grab;
+    user-select: none;
 }
 
 .assignment-detail:hover {
-    background-color: #f8faff;
-    border-color: #90caf9;
+    background-color: #f5f9ff;
+    border-color: #64b5f6;
+    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.1);
 }
 
 .assignment-name {
@@ -426,4 +430,10 @@ h1, h2, h3 {
 
 .assignment-detail.drag-over {
     border: 2px dashed #1976d2;
+}
+
+.assignment-detail.dragging {
+    opacity: 0.6;
+    background-color: #e3f2fd;
+    border: 2px solid #2196f3;
 }

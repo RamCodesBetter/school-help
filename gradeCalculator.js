@@ -405,6 +405,68 @@ document.addEventListener('DOMContentLoaded', () => {
             
             summariesContainer.appendChild(categoryDiv);
         }
+
+        // Add drag and drop listeners to all assignments
+        document.querySelectorAll('.assignment-detail').forEach(assignment => {
+            assignment.setAttribute('draggable', true);
+            
+            assignment.addEventListener('dragstart', (e) => {
+                e.stopPropagation();
+                assignment.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', assignment.dataset.name);
+            });
+
+            assignment.addEventListener('dragend', (e) => {
+                assignment.classList.remove('dragging');
+            });
+        });
+
+        // Add drop zones to all category sections
+        document.querySelectorAll('.category-assignments').forEach(dropZone => {
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const draggingElement = document.querySelector('.dragging');
+                if (draggingElement) {
+                    const afterElement = getDragAfterElement(dropZone, e.clientY);
+                    if (afterElement) {
+                        dropZone.insertBefore(draggingElement, afterElement);
+                    } else {
+                        dropZone.appendChild(draggingElement);
+                    }
+                }
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const assignmentName = e.dataTransfer.getData('text/plain');
+                const newCategory = dropZone.dataset.category;
+                
+                // Update the assignment category
+                const assignment = assignments.find(a => a.name === assignmentName);
+                if (assignment && assignment.category !== newCategory) {
+                    assignment.category = newCategory;
+                    assignment.weight = assignments.find(a => a.category === newCategory)?.weight || 0;
+                    calculateTotal();
+                    updateCategorySummaries();
+                }
+            });
+        });
+    }
+
+    // Helper function to determine drop position
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.assignment-detail:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
 
     addAssignmentBtn.addEventListener('click', () => {
