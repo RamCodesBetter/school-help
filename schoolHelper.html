@@ -11,16 +11,21 @@
         <h1>Canvas Grade Calculator</h1>
         <div class="calculator">
             <div class="paste-area">
-                <textarea id="canvasPaste" placeholder="Paste your Canvas grades here..."></textarea>
+                <textarea id="canvasPaste" placeholder="Paste your Canvas assignments page here..."></textarea>
                 <button id="processPaste">Process Canvas Grades</button>
             </div>
             <div class="grading-scale-selector">
-                <h3>Select Grading Scale</h3>
-                <select id="gradingScale">
-                    <option value="all">All Grades (A, A-, B+, etc.)</option>
-                    <option value="noMinus">No Minuses (A, B+, B, etc.)</option>
-                    <option value="simple">Simple (A, B, C, D, F)</option>
-                </select>
+                <div class="scale-and-categories">
+                    <div>
+                        <h3>Select Grading Scale</h3>
+                        <select id="gradingScale">
+                            <option value="all">All Grades (A, A-, B+, etc.)</option>
+                            <option value="noMinus">No Minuses (A, B+, B, etc.)</option>
+                            <option value="simple">Simple (A, B, C, D, F)</option>
+                        </select>
+                    </div>
+                    <button id="manageCategories">Manage Categories</button>
+                </div>
             </div>
             <div class="left-section">
                 <button id="addAssignment">Add Assignment</button>

@@ -326,90 +326,39 @@ document.addEventListener('DOMContentLoaded', () => {
         return gradingScales[scale](percentage);
     }
 
-    function updateCategorySummaries(categories = {}) {
-        let summariesContainer = document.getElementById('categorySummaries');
-        if (!summariesContainer) {
-            summariesContainer = document.createElement('div');
-            summariesContainer.id = 'categorySummaries';
-            document.querySelector('.calculator').insertBefore(
-                summariesContainer,
-                document.querySelector('.results')
-            );
-        }
-        summariesContainer.innerHTML = '';
-
-        // Initialize category totals based on existing assignments
-        const categoryTotals = {};
+    function updateCategorySummaries() {
+        // Get unique categories from existing assignments
+        const existingCategories = [...new Set(assignments.map(a => a.category))];
         
-        // First pass: collect unique categories and their weights
-        assignments.forEach(assignment => {
-            if (!categoryTotals[assignment.category]) {
-                categoryTotals[assignment.category] = {
-                    weight: assignment.weight,
-                    totalScore: 0,
-                    totalPoints: 0
-                };
-            }
-        });
-
-        // Second pass: calculate totals for each category
-        assignments.forEach(assignment => {
-            const category = assignment.category;
-            categoryTotals[category].totalScore += assignment.score;
-            categoryTotals[category].totalPoints += assignment.total;
-        });
-
-        // Create category summaries
-        for (const category in categoryTotals) {
-            const categoryData = categoryTotals[category];
-            const percentage = categoryData.totalPoints > 0 
-                ? (categoryData.totalScore / categoryData.totalPoints) * 100 
-                : 0;
-            const letterGrade = getLetterGrade(percentage);
-
-            const categoryAssignments = assignments.filter(a => a.category === category);
-            const assignmentsHTML = categoryAssignments.map((assignment) => {
-                const assignmentPercentage = (assignment.score / assignment.total) * 100;
-                const assignmentLetterGrade = getLetterGrade(assignmentPercentage);
-                return `
-                    <div class="assignment-detail" data-name="${assignment.name}">
-                        <span class="assignment-name">${assignment.name}</span>
-                        <div class="assignment-scores">
-                            <span>${assignment.score}/${assignment.total}</span>
-                            <span>(${assignmentPercentage.toFixed(2)}%)</span>
-                            <span>${assignmentLetterGrade}</span>
-                            <button class="edit-btn" onclick="editAssignment('${assignment.name}')">Edit</button>
-                            <button class="delete-btn" onclick="removeAssignment('${assignment.name}')">×</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            const categoryDiv = document.createElement('details');
-            categoryDiv.className = 'category-summary';
-            categoryDiv.open = true;
-            
-            categoryDiv.innerHTML = `
+        categorySummariesDiv.innerHTML = existingCategories.map(category => `
+            <div class="category-summary">
                 <summary>
-                    <span class="category-name">${category}</span>
-                    <span class="category-grade">${percentage.toFixed(2)}% (${letterGrade})</span>
+                    ${category} (${assignments.find(a => a.category === category)?.weight || 0}%) - 
+                    ${calculateCategoryGrade(category).toFixed(2)}%
                 </summary>
-                <div class="category-details">
-                    <p>Weight: ${categoryData.weight}%</p>
-                    <p>Points: ${categoryData.totalScore}/${categoryData.totalPoints}</p>
-                    <div class="category-assignments">
-                        ${assignmentsHTML}
-                    </div>
+                <div class="category-assignments" data-category="${category}">
+                    ${assignments
+                        .filter(a => a.category === category)
+                        .map(assignment => `
+                            <div class="assignment-detail" 
+                                 draggable="true" 
+                                 data-name="${assignment.name}"
+                                 data-category="${category}">
+                                <span class="assignment-name">${assignment.name}</span>
+                                <div class="assignment-scores">
+                                    <span>${assignment.score}/${assignment.total}</span>
+                                    <span>(${((assignment.score/assignment.total)*100).toFixed(1)}%)</span>
+                                    <button class="edit-btn" onclick="editAssignment('${assignment.name}')">Edit</button>
+                                    <button class="delete-btn" onclick="removeAssignment('${assignment.name}')">Delete</button>
+                                </div>
+                            </div>
+                        `).join('')}
                 </div>
-            `;
-            
-            summariesContainer.appendChild(categoryDiv);
-        }
+            </div>
+        `).join('');
 
-        // Add drag and drop listeners to all assignments
+        // Add drag and drop listeners
         document.querySelectorAll('.assignment-detail').forEach(assignment => {
-            assignment.setAttribute('draggable', true);
-            
             assignment.addEventListener('dragstart', (e) => {
                 e.stopPropagation();
                 e.target.classList.add('dragging');
@@ -418,25 +367,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             assignment.addEventListener('dragend', (e) => {
                 e.target.classList.remove('dragging');
-                // Remove any duplicate elements that might have been created
-                const duplicates = document.querySelectorAll(`[data-name="${e.target.dataset.name}"]`);
-                if (duplicates.length > 1) {
-                    duplicates.forEach((dupe, index) => {
-                        if (index > 0) dupe.remove();
-                    });
-                }
             });
         });
 
-        // Add drop zones to all category sections
+        // Add drop zones to existing category sections
         document.querySelectorAll('.category-assignments').forEach(dropZone => {
             dropZone.addEventListener('dragover', (e) => {
                 e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', (e) => {
+                dropZone.classList.remove('drag-over');
             });
 
             dropZone.addEventListener('drop', (e) => {
                 e.preventDefault();
-                e.stopPropagation();
+                dropZone.classList.remove('drag-over');
                 
                 const assignmentName = e.dataTransfer.getData('text/plain');
                 const newCategory = dropZone.dataset.category;
@@ -444,14 +391,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Find the assignment and update its category
                 const assignment = assignments.find(a => a.name === assignmentName);
                 if (assignment && assignment.category !== newCategory) {
-                    // Update the category
+                    // Update only the category, keep other properties unchanged
                     assignment.category = newCategory;
                     
-                    // Get the weight from an existing assignment in the target category
-                    const categoryWeight = assignments.find(a => a.category === newCategory)?.weight || 0;
-                    assignment.weight = categoryWeight;
-                    
-                    // Update the UI
+                    // Update the UI without creating new categories
                     calculateTotal();
                     updateCategorySummaries();
                 }
@@ -459,20 +402,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Helper function to determine drop position
-    function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.assignment-detail:not(.dragging)')];
+    // Helper function to calculate category grade
+    function calculateCategoryGrade(category) {
+        const categoryAssignments = assignments.filter(a => a.category === category);
+        if (categoryAssignments.length === 0) return 0;
         
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
+        const totalScore = categoryAssignments.reduce((sum, a) => sum + a.score, 0);
+        const totalPoints = categoryAssignments.reduce((sum, a) => sum + a.total, 0);
+        
+        return (totalScore / totalPoints) * 100;
     }
 
     addAssignmentBtn.addEventListener('click', () => {
@@ -608,6 +546,112 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('gradingScale').addEventListener('change', () => {
         calculateTotal();
     });
+
+    // Add this function to handle category management
+    function showCategoryManager() {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        
+        // Get unique categories and their weights
+        const categories = Array.from(new Set(assignments.map(a => a.category)))
+            .map(category => ({
+                name: category,
+                weight: assignments.find(a => a.category === category)?.weight || 0
+            }));
+
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Manage Categories</h2>
+                <div class="category-list">
+                    ${categories.map(cat => `
+                        <div class="category-item-manage" data-category="${cat.name}">
+                            <span>${cat.name}</span>
+                            <div class="category-actions">
+                                <input type="number" class="category-weight-input" value="${cat.weight}" min="0" max="100">
+                                <button class="delete-category-btn delete-btn">Delete</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="add-category-section">
+                    <input type="text" id="newCategoryName" placeholder="New Category Name">
+                    <input type="number" id="newCategoryWeight" placeholder="Weight %" min="0" max="100">
+                    <button id="addNewCategory">Add Category</button>
+                </div>
+                <div class="modal-buttons">
+                    <button id="cancelCategories">Cancel</button>
+                    <button id="saveCategories">Save Changes</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+
+        // Add event listeners
+        modal.querySelector('#addNewCategory').onclick = () => {
+            const name = modal.querySelector('#newCategoryName').value;
+            const weight = parseFloat(modal.querySelector('#newCategoryWeight').value);
+            
+            if (name && !isNaN(weight)) {
+                const categoryList = modal.querySelector('.category-list');
+                const newCategoryHtml = `
+                    <div class="category-item-manage" data-category="${name}">
+                        <span>${name}</span>
+                        <div class="category-actions">
+                            <input type="number" class="category-weight-input" value="${weight}" min="0" max="100">
+                            <button class="delete-category-btn delete-btn">Delete</button>
+                        </div>
+                    </div>
+                `;
+                categoryList.insertAdjacentHTML('beforeend', newCategoryHtml);
+                
+                // Clear inputs
+                modal.querySelector('#newCategoryName').value = '';
+                modal.querySelector('#newCategoryWeight').value = '';
+            }
+        };
+
+        // Handle category deletion
+        modal.querySelectorAll('.delete-category-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                const categoryItem = e.target.closest('.category-item-manage');
+                const categoryName = categoryItem.dataset.category;
+                
+                if (confirm(`Delete category "${categoryName}"? This will delete all assignments in this category.`)) {
+                    // Remove assignments in this category
+                    assignments = assignments.filter(a => a.category !== categoryName);
+                    categoryItem.remove();
+                    calculateTotal();
+                    updateCategorySummaries();
+                }
+            };
+        });
+
+        // Save changes
+        modal.querySelector('#saveCategories').onclick = () => {
+            const categoryItems = modal.querySelectorAll('.category-item-manage');
+            categoryItems.forEach(item => {
+                const categoryName = item.dataset.category;
+                const newWeight = parseFloat(item.querySelector('.category-weight-input').value);
+                
+                // Update weights for all assignments in this category
+                assignments.forEach(assignment => {
+                    if (assignment.category === categoryName) {
+                        assignment.weight = newWeight;
+                    }
+                });
+            });
+            
+            calculateTotal();
+            updateCategorySummaries();
+            modal.remove();
+        };
+
+        modal.querySelector('#cancelCategories').onclick = () => modal.remove();
+    }
+
+    // Add the event listener for the manage categories button
+    document.getElementById('manageCategories').addEventListener('click', showCategoryManager);
 
     initializeCategoryManagement();
 });
