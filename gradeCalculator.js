@@ -356,14 +356,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update the removeAssignment function
     window.removeAssignment = function(assignmentName) {
-        const index = assignments.findIndex(a => a.name === assignmentName);
-        if (index > -1) {
-            if (confirm(`Are you sure you want to delete "${assignmentName}"?`)) {
+        const assignment = assignments.find(a => a.name === assignmentName);
+        if (!assignment) return;
+
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content delete-modal">
+                <h2>Delete Assignment</h2>
+                <p>Are you sure you want to delete "${assignmentName}"?</p>
+                <div class="current-details">
+                    <p>Score: ${assignment.score}/${assignment.total}</p>
+                    <p>Grade: ${((assignment.score/assignment.total)*100).toFixed(2)}%</p>
+                </div>
+                <div class="modal-buttons">
+                    <button id="cancelDelete">Cancel</button>
+                    <button id="confirmDelete">Delete</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+
+        modal.querySelector('#cancelDelete').onclick = () => modal.remove();
+        modal.querySelector('#confirmDelete').onclick = () => {
+            const index = assignments.findIndex(a => a.name === assignmentName);
+            if (index > -1) {
                 assignments.splice(index, 1);
                 calculateTotal();
                 updateCategorySummaries();
             }
-        }
+            modal.remove();
+        };
     };
 
     // Update the editAssignment function to use the assignment name instead of index

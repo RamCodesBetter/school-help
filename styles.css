@@ -428,3 +428,29 @@ h1, h2, h3 {
     border: 2px solid #1976d2;
     box-shadow: 0 4px 8px rgba(25, 118, 210, 0.2);
 }
+
+/* Add these styles for the delete modal */
+.delete-modal {
+    max-width: 400px;
+}
+
+.delete-modal p {
+    margin-bottom: 1rem;
+    color: #666;
+}
+
+#cancelDelete {
+    background-color: #6c757d;
+}
+
+#cancelDelete:hover {
+    background-color: #5a6268;
+}
+
+#confirmDelete {
+    background-color: #dc3545;
+}
+
+#confirmDelete:hover {
+    background-color: #c82333;
+}
