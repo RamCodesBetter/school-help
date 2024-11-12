@@ -428,36 +428,3 @@ h1, h2, h3 {
     border: 2px solid #1976d2;
     box-shadow: 0 4px 8px rgba(25, 118, 210, 0.2);
 }
-
-.scale-and-categories {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-}
-
-#manageCategories {
-    background-color: #1976d2;
-    white-space: nowrap;
-}
-
-.category-list {
-    margin: 1rem 0;
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.category-item-manage {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem;
-    background: white;
-    border: 1px solid #90caf9;
-    border-radius: 4px;
-    margin: 0.5rem 0;
-}
-
-.category-weight-input {
-    width: 80px !important;
-}

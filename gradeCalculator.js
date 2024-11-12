@@ -1,132 +1,3 @@
-function initializeCategoryManagement() {
-    const categoryList = document.getElementById('categoryList');
-    const addCategoryBtn = document.getElementById('addCategory');
-
-    function updateCategoryList() {
-        const categories = Array.from(new Set(assignments.map(a => a.category)));
-        categoryList.innerHTML = categories.map(category => `
-            <div class="category-item" draggable="true" data-category="${category}">
-                <span>${category}</span>
-                <span>(${assignments.find(a => a.category === category)?.weight}%)</span>
-                <button class="edit-category-btn">Edit</button>
-            </div>
-        `).join('');
-
-        // Add drag-drop listeners
-        document.querySelectorAll('.category-item').forEach(item => {
-            item.addEventListener('dragstart', handleDragStart);
-            item.addEventListener('dragend', handleDragEnd);
-        });
-    }
-
-    // Drag and Drop functionality
-    function handleDragStart(e) {
-        // Prevent text selection during drag
-        e.stopPropagation();
-        
-        // Add visual feedback
-        e.target.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', e.target.dataset.category);
-        
-        // Add a drag image (optional)
-        const dragImage = e.target.cloneNode(true);
-        dragImage.style.opacity = '0.5';
-        document.body.appendChild(dragImage);
-        e.dataTransfer.setDragImage(dragImage, 0, 0);
-        setTimeout(() => document.body.removeChild(dragImage), 0);
-    }
-
-    function handleDragEnd(e) {
-        e.target.classList.remove('dragging');
-    }
-
-    // Add drag-drop listeners to assignments
-    document.querySelectorAll('.assignment-detail').forEach(assignment => {
-        assignment.setAttribute('draggable', true);
-        assignment.addEventListener('dragstart', handleAssignmentDragStart);
-        assignment.addEventListener('dragover', handleDragOver);
-        assignment.addEventListener('drop', handleDrop);
-    });
-
-    function handleAssignmentDragStart(e) {
-        e.dataTransfer.setData('text/plain', e.target.dataset.name);
-    }
-
-    function handleDragOver(e) {
-        e.preventDefault();
-        e.target.classList.add('drag-over');
-    }
-
-    function handleDrop(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const draggedCategory = e.dataTransfer.getData('text/plain');
-        const targetCategory = e.currentTarget.dataset.category;
-        
-        if (draggedCategory && targetCategory && draggedCategory !== targetCategory) {
-            // Update the assignment category
-            const assignment = assignments.find(a => a.name === e.currentTarget.dataset.name);
-            if (assignment) {
-                assignment.category = draggedCategory;
-                assignment.weight = assignments.find(a => a.category === draggedCategory)?.weight || 0;
-                calculateTotal();
-                updateCategorySummaries();
-            }
-        }
-        
-        e.currentTarget.classList.remove('drag-over');
-    }
-
-    // Add category button functionality
-    addCategoryBtn.addEventListener('click', () => {
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <h2>Add New Category</h2>
-                <input type="text" id="categoryName" placeholder="Category Name">
-                <input type="number" id="categoryWeight" placeholder="Weight (%)" min="0" max="100">
-                <div class="modal-buttons">
-                    <button id="cancelAddCategory">Cancel</button>
-                    <button id="confirmAddCategory">Add Category</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-
-        modal.querySelector('#confirmAddCategory').onclick = () => {
-            const name = modal.querySelector('#categoryName').value;
-            const weight = parseFloat(modal.querySelector('#categoryWeight').value);
-            if (name && !isNaN(weight)) {
-                // Create a new empty category by adding a placeholder assignment
-                assignments.push({
-                    name: `${name} (placeholder)`,
-                    score: 0,
-                    total: 0,
-                    category: name,
-                    weight: weight,
-                    isPlaceholder: true  // Add this flag to identify placeholder assignments
-                });
-                
-                // Update the UI
-                updateCategoryList();
-                updateCategorySummaries();
-                calculateTotal();
-                modal.remove();
-            } else {
-                alert('Please fill in all fields correctly');
-            }
-        };
-
-        modal.querySelector('#cancelAddCategory').onclick = () => modal.remove();
-    });
-
-    // Initialize category list
-    updateCategoryList();
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     const addAssignmentBtn = document.getElementById('addAssignment');
     const totalGradeSpan = document.getElementById('totalGrade');
@@ -476,26 +347,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update the editAssignment function to use the assignment name instead of index
     window.editAssignment = function(assignmentName) {
-        // Find the assignment by name
         const assignment = assignments.find(a => a.name === assignmentName);
         if (!assignment) {
             console.error('Assignment not found:', assignmentName);
             return;
         }
-
+    
         const modal = document.createElement('div');
         modal.className = 'modal';
         modal.innerHTML = `
             <div class="modal-content">
                 <h2>Edit Assignment</h2>
-                <select id="editCategory" value="${assignment.category}">
-                    ${Object.keys(assignments.reduce((acc, a) => {
-                        acc[a.category] = true;
-                        return acc;
-                    }, {})).map(category => `
-                        <option value="${category}" ${assignment.category === category ? 'selected' : ''}>${category}</option>
-                    `).join('')}
-                </select>
                 <input type="text" id="editName" value="${assignment.name}" placeholder="Assignment Name">
                 <div class="score-inputs">
                     <input type="number" id="editScore" value="${assignment.score}" min="0" step="any" placeholder="Score">
@@ -504,7 +366,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="current-details">
                     <p>Current Grade: ${((assignment.score/assignment.total)*100).toFixed(2)}% (${getLetterGrade((assignment.score/assignment.total)*100)})</p>
-                    <p>Category Weight: ${assignment.weight}%</p>
                 </div>
                 <div class="modal-buttons">
                     <button id="cancelEdit">Cancel</button>
@@ -512,17 +373,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
+    
         document.body.appendChild(modal);
-
+    
         modal.querySelector('#cancelEdit').onclick = () => modal.remove();
         modal.querySelector('#confirmEdit').onclick = () => {
-            const newCategory = modal.querySelector('#editCategory').value;
             const newName = modal.querySelector('#editName').value;
             const newScore = parseFloat(modal.querySelector('#editScore').value);
             const newTotal = parseFloat(modal.querySelector('#editTotal').value);
-
+    
             if (newName && !isNaN(newScore) && !isNaN(newTotal)) {
-                assignment.category = newCategory;
                 assignment.name = newName;
                 assignment.score = newScore;
                 assignment.total = newTotal;
