@@ -126,37 +126,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateTotal() {
-        // Group assignments by category
         const categories = {};
+        
+        // First pass: collect all assignments by category
         assignments.forEach(assignment => {
             if (!categories[assignment.category]) {
                 categories[assignment.category] = {
-                    totalScore: 0,
-                    totalPoints: 0,
+                    assignments: [],
                     weight: assignment.weight
                 };
             }
-            categories[assignment.category].totalScore += assignment.score;
-            categories[assignment.category].totalPoints += assignment.total;
+            categories[assignment.category].assignments.push(assignment);
         });
 
-        let weightedTotal = 0;
+        let weightedSum = 0;
         let totalWeight = 0;
 
-        // Calculate weighted grade for each category
+        // Second pass: calculate each category's contribution
         for (const category in categories) {
             const cat = categories[category];
-            if (cat.totalPoints > 0) {  // Only include categories with assignments
-                const categoryPercentage = (cat.totalScore / cat.totalPoints);
-                weightedTotal += categoryPercentage * cat.weight;
+            const categoryAssignments = cat.assignments;
+            
+            if (categoryAssignments.length > 0) {
+                const categoryScore = categoryAssignments.reduce((sum, a) => sum + a.score, 0);
+                const categoryTotal = categoryAssignments.reduce((sum, a) => sum + a.total, 0);
+                const categoryPercentage = categoryScore / categoryTotal;
+                
+                weightedSum += categoryPercentage * cat.weight;
                 totalWeight += cat.weight;
             }
         }
 
-        // Calculate final grade
-        const finalGrade = (weightedTotal / totalWeight) * 100;
-
-        // Update display
+        const finalGrade = (weightedSum / totalWeight) * 100;
         const letterGrade = getLetterGrade(finalGrade);
         totalGradeSpan.textContent = `${finalGrade.toFixed(2)}% (${letterGrade})`;
         updateGradeColor(finalGrade);
@@ -204,7 +205,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const summariesContainer = document.getElementById('categorySummaries');
         summariesContainer.innerHTML = '';
 
-        // Get unique categories
         const uniqueCategories = [...new Set(assignments.map(a => a.category))];
 
         uniqueCategories.forEach(category => {
@@ -237,7 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const categoryDiv = document.createElement('details');
             categoryDiv.className = 'category-summary';
-            categoryDiv.open = true;
             
             categoryDiv.innerHTML = `
                 <summary>
