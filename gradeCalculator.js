@@ -198,35 +198,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateCategorySummaries() {
-        // Get unique categories from existing assignments
-        const existingCategories = [...new Set(assignments.map(a => a.category))];
-        
-        categorySummariesDiv.innerHTML = existingCategories.map(category => `
-            <div class="category-summary">
+        const summariesContainer = document.getElementById('categorySummaries');
+        summariesContainer.innerHTML = '';
+
+        // Get unique categories
+        const uniqueCategories = [...new Set(assignments.map(a => a.category))];
+
+        uniqueCategories.forEach(category => {
+            const categoryAssignments = assignments.filter(a => a.category === category);
+            const categoryData = {
+                totalScore: categoryAssignments.reduce((sum, a) => sum + a.score, 0),
+                totalPoints: categoryAssignments.reduce((sum, a) => sum + a.total, 0),
+                weight: categoryAssignments[0]?.weight || 0
+            };
+
+            const percentage = (categoryData.totalScore / categoryData.totalPoints) * 100;
+            const letterGrade = getLetterGrade(percentage);
+
+            const assignmentsHTML = categoryAssignments.map((assignment) => {
+                const assignmentPercentage = (assignment.score / assignment.total) * 100;
+                const assignmentLetterGrade = getLetterGrade(assignmentPercentage);
+                return `
+                    <div class="assignment-detail" draggable="true" data-name="${assignment.name}" data-category="${category}">
+                        <span class="assignment-name">${assignment.name}</span>
+                        <div class="assignment-scores">
+                            <span>${assignment.score}/${assignment.total}</span>
+                            <span>(${assignmentPercentage.toFixed(2)}%)</span>
+                            <span>${assignmentLetterGrade}</span>
+                            <button class="edit-btn" onclick="editAssignment('${assignment.name}')">Edit</button>
+                            <button class="delete-btn" onclick="removeAssignment('${assignment.name}')">×</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const categoryDiv = document.createElement('details');
+            categoryDiv.className = 'category-summary';
+            categoryDiv.open = true;
+            
+            categoryDiv.innerHTML = `
                 <summary>
-                    ${category} (${assignments.find(a => a.category === category)?.weight || 0}%) - 
-                    ${calculateCategoryGrade(category).toFixed(2)}%
+                    <span class="category-name">${category}</span>
+                    <span class="category-grade">${percentage.toFixed(2)}% (${letterGrade})</span>
                 </summary>
                 <div class="category-assignments" data-category="${category}">
-                    ${assignments
-                        .filter(a => a.category === category)
-                        .map(assignment => `
-                            <div class="assignment-detail" 
-                                 draggable="true" 
-                                 data-name="${assignment.name}"
-                                 data-category="${category}">
-                                <span class="assignment-name">${assignment.name}</span>
-                                <div class="assignment-scores">
-                                    <span>${assignment.score}/${assignment.total}</span>
-                                    <span>(${((assignment.score/assignment.total)*100).toFixed(1)}%)</span>
-                                    <button class="edit-btn" onclick="editAssignment('${assignment.name}')">Edit</button>
-                                    <button class="delete-btn" onclick="removeAssignment('${assignment.name}')">Delete</button>
-                                </div>
-                            </div>
-                        `).join('')}
+                    ${assignmentsHTML}
                 </div>
-            </div>
-        `).join('');
+            `;
+
+            summariesContainer.appendChild(categoryDiv);
+        });
 
         // Add drag and drop listeners
         document.querySelectorAll('.assignment-detail').forEach(assignment => {
