@@ -126,40 +126,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateTotal() {
-        let finalGrade = 0;
-        let totalWeight = 0;
-        const categories = {};
-        
         // Group assignments by category
+        const categories = {};
         assignments.forEach(assignment => {
-            const category = assignment.category;
-            if (!categories[category]) {
-                categories[category] = {
+            if (!categories[assignment.category]) {
+                categories[assignment.category] = {
                     totalScore: 0,
                     totalPoints: 0,
                     weight: assignment.weight
                 };
             }
-            categories[category].totalScore += assignment.score;
-            categories[category].totalPoints += assignment.total;
+            categories[assignment.category].totalScore += assignment.score;
+            categories[assignment.category].totalPoints += assignment.total;
         });
 
-        // Calculate final grade using category weights
+        let weightedTotal = 0;
+        let totalWeight = 0;
+
+        // Calculate weighted grade for each category
         for (const category in categories) {
-            const categoryData = categories[category];
-            if (categoryData.totalPoints > 0) {  // Only include categories with assignments
-                const categoryPercentage = (categoryData.totalScore / categoryData.totalPoints) * 100;
-                finalGrade += (categoryPercentage * categoryData.weight);
-                totalWeight += categoryData.weight;
+            const cat = categories[category];
+            if (cat.totalPoints > 0) {  // Only include categories with assignments
+                const categoryPercentage = (cat.totalScore / cat.totalPoints);
+                weightedTotal += categoryPercentage * cat.weight;
+                totalWeight += cat.weight;
             }
         }
 
-        // Adjust for total weight
-        if (totalWeight > 0) {
-            finalGrade = finalGrade / 100;  // Convert back to percentage scale
-        }
+        // Calculate final grade
+        const finalGrade = (weightedTotal / totalWeight) * 100;
 
-        // Update the total grade display with both percentage and letter grade
+        // Update display
         const letterGrade = getLetterGrade(finalGrade);
         totalGradeSpan.textContent = `${finalGrade.toFixed(2)}% (${letterGrade})`;
         updateGradeColor(finalGrade);
