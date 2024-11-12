@@ -436,14 +436,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             dropZone.addEventListener('drop', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
+                
                 const assignmentName = e.dataTransfer.getData('text/plain');
                 const newCategory = dropZone.dataset.category;
                 
-                // Update the assignment category
+                // Find the assignment and update its category
                 const assignment = assignments.find(a => a.name === assignmentName);
                 if (assignment && assignment.category !== newCategory) {
+                    // Update the category
                     assignment.category = newCategory;
-                    // Update the UI after the category change
+                    
+                    // Get the weight from an existing assignment in the target category
+                    const categoryWeight = assignments.find(a => a.category === newCategory)?.weight || 0;
+                    assignment.weight = categoryWeight;
+                    
+                    // Update the UI
                     calculateTotal();
                     updateCategorySummaries();
                 }
