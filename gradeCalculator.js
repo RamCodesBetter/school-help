@@ -412,12 +412,19 @@ document.addEventListener('DOMContentLoaded', () => {
             
             assignment.addEventListener('dragstart', (e) => {
                 e.stopPropagation();
-                assignment.classList.add('dragging');
-                e.dataTransfer.setData('text/plain', assignment.dataset.name);
+                e.target.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', e.target.dataset.name);
             });
 
             assignment.addEventListener('dragend', (e) => {
-                assignment.classList.remove('dragging');
+                e.target.classList.remove('dragging');
+                // Remove any duplicate elements that might have been created
+                const duplicates = document.querySelectorAll(`[data-name="${e.target.dataset.name}"]`);
+                if (duplicates.length > 1) {
+                    duplicates.forEach((dupe, index) => {
+                        if (index > 0) dupe.remove();
+                    });
+                }
             });
         });
 
@@ -425,15 +432,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.category-assignments').forEach(dropZone => {
             dropZone.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                const draggingElement = document.querySelector('.dragging');
-                if (draggingElement) {
-                    const afterElement = getDragAfterElement(dropZone, e.clientY);
-                    if (afterElement) {
-                        dropZone.insertBefore(draggingElement, afterElement);
-                    } else {
-                        dropZone.appendChild(draggingElement);
-                    }
-                }
             });
 
             dropZone.addEventListener('drop', (e) => {
@@ -445,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const assignment = assignments.find(a => a.name === assignmentName);
                 if (assignment && assignment.category !== newCategory) {
                     assignment.category = newCategory;
-                    assignment.weight = assignments.find(a => a.category === newCategory)?.weight || 0;
+                    // Update the UI after the category change
                     calculateTotal();
                     updateCategorySummaries();
                 }

@@ -28,39 +28,21 @@ h1 {
 
 .calculator {
     display: grid;
-    grid-template-columns: 200px minmax(300px, 1fr) 400px;
+    grid-template-columns: minmax(400px, 1fr) 350px;
     gap: 2rem;
     background-color: #f0f8ff;
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
     border: 1px solid #64b5f6;
-    max-width: 100%;
-    overflow-x: hidden;
 }
 
 .left-section {
-    grid-column: 2;
-    background-color: #ffffff;
-    padding: 1.5rem;
-    border-radius: 8px;
-    border: 1px solid #90caf9;
+    grid-column: 1;
 }
 
 .right-section {
-    grid-column: 3;
-    width: 100%;
-    min-width: 350px;
-    max-width: 400px;
-    position: sticky;
-    top: 2rem;
-    height: fit-content;
-    padding: 1.5rem;
-    background-color: #f1f8ff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    border: 1px solid #90caf9;
-    margin-left: auto;
+    grid-column: 2;
 }
 
 .assignment-row {
@@ -389,11 +371,7 @@ h1, h2, h3 {
 }
 
 .sidebar {
-    grid-column: 1;
-    background-color: #f1f8ff;
-    padding: 1rem;
-    border-radius: 8px;
-    border: 1px solid #90caf9;
+    display: none;
 }
 
 .category-item {
