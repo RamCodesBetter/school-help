@@ -127,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function calculateTotal() {
         let finalGrade = 0;
+        let totalWeight = 0;
         const categories = {};
         
         // Group assignments by category
@@ -146,17 +147,22 @@ document.addEventListener('DOMContentLoaded', () => {
         // Calculate final grade using category weights
         for (const category in categories) {
             const categoryData = categories[category];
-            const categoryPercentage = (categoryData.totalScore / categoryData.totalPoints) * 100;
-            finalGrade += categoryPercentage * (categoryData.weight / 100);
+            if (categoryData.totalPoints > 0) {  // Only include categories with assignments
+                const categoryPercentage = (categoryData.totalScore / categoryData.totalPoints) * 100;
+                finalGrade += (categoryPercentage * categoryData.weight);
+                totalWeight += categoryData.weight;
+            }
+        }
+
+        // Adjust for total weight
+        if (totalWeight > 0) {
+            finalGrade = finalGrade / 100;  // Convert back to percentage scale
         }
 
         // Update the total grade display with both percentage and letter grade
         const letterGrade = getLetterGrade(finalGrade);
         totalGradeSpan.textContent = `${finalGrade.toFixed(2)}% (${letterGrade})`;
         updateGradeColor(finalGrade);
-
-        // Update category summaries
-        updateCategorySummaries(categories);
     }
 
     const gradingScales = {
