@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    function calculateTotal() {
+    function calculateTotal(returnOnly = false) {
         const oldGrade = totalGradeSpan.textContent;
         
         const categories = {};
@@ -227,6 +227,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const finalGrade = (weightedSum / totalWeight) * 100;
         const letterGrade = getLetterGrade(finalGrade);
+
+        if (returnOnly) return finalGrade;
         
         // Add transition effect if grade changed
         if (oldGrade !== `${finalGrade.toFixed(2)}% (${letterGrade})`) {
@@ -550,4 +552,131 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     initializeCategoryManagement();
+
+    let scenarios = [];
+
+    function createScenario() {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Create New Scenario</h2>
+                <div class="scenario-form">
+                    <input type="text" id="scenarioName" placeholder="Scenario Name">
+                    <div class="remaining-assignments">
+                        ${getRemainingAssignmentsHTML()}
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button id="cancelScenario">Cancel</button>
+                    <button id="saveScenario">Save Scenario</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        setupScenarioListeners(modal);
+    }
+
+    function getRemainingAssignmentsHTML() {
+        // Get assignments with no scores
+        const remaining = assignments.filter(a => !a.score || a.score === 0);
+        return remaining.map(a => `
+            <div class="scenario-assignment">
+                <span>${a.name}</span>
+                <input type="number" 
+                       data-assignment="${a.name}"
+                       min="0" 
+                       max="${a.total}"
+                       placeholder="Expected score">
+                <span>/ ${a.total}</span>
+            </div>
+        `).join('');
+    }
+
+    function calculateProjectedGrade(scenarioScores) {
+        // Create a deep copy of current assignments
+        const projectedAssignments = assignments.map(a => ({...a}));
+        
+        // Apply scenario scores
+        scenarioScores.forEach(score => {
+            const assignment = projectedAssignments.find(a => a.name === score.name);
+            if (assignment) {
+                assignment.score = score.value;
+            }
+        });
+
+        // Calculate using existing total calculation logic
+        return calculateTotalForAssignments(projectedAssignments);
+    }
+
+    function calculateMinimumNeeded(targetGrade = 90) {
+        const remaining = assignments.filter(a => !a.score || a.score === 0);
+        const totalRemainingPoints = remaining.reduce((sum, a) => sum + a.total, 0);
+        const currentTotal = calculateTotal(true); // Add parameter to return value instead of updating UI
+        
+        const pointsNeeded = (targetGrade - currentTotal) * totalRemainingPoints / 100;
+        return (pointsNeeded / totalRemainingPoints) * 100;
+    }
+    
+    // Event Listeners
+    document.getElementById('newScenario').addEventListener('click', createScenario);
+
+    document.getElementById('scenarioSelect').addEventListener('change', (e) => {
+        const scenario = scenarios.find(s => s.id === e.target.value);
+        if (scenario) {
+            const projected = calculateProjectedGrade(scenario.scores);
+            document.getElementById('projectedGrade').textContent = 
+                `${projected.toFixed(2)}% (${getLetterGrade(projected)})`;
+        }
+    });
+
+    function saveScenario(modal) {
+        const name = modal.querySelector('#scenarioName').value;
+        const scores = [];
+        
+        modal.querySelectorAll('.scenario-assignment input').forEach(input => {
+            const value = parseFloat(input.value);
+            if (!isNaN(value)) {
+                scores.push({
+                    name: input.dataset.assignment,
+                    value: value
+                });
+            }
+        });
+        
+        const scenario = {
+            id: Date.now().toString(),
+            name: name,
+            scores: scores,
+            created: new Date()
+        };
+        
+        scenarios.push(scenario);
+        updateScenarioSelect();
+        updatePredictions();
+        
+        modal.remove();
+    }
+
+    function updatePredictions() {
+        const minNeeded = calculateMinimumNeeded();
+        document.getElementById('minGradeNeeded').textContent = 
+            `${minNeeded.toFixed(2)}%`;
+        
+        if (scenarios.length > 0) {
+            const latestScenario = scenarios[scenarios.length - 1];
+            const projected = calculateProjectedGrade(latestScenario.scores);
+            document.getElementById('projectedGrade').textContent = 
+                `${projected.toFixed(2)}% (${getLetterGrade(projected)})`;
+        }
+    }
+
+    function updateScenarioSelect() {
+        const select = document.getElementById('scenarioSelect');
+        select.innerHTML = '<option value="">Select Scenario</option>' +
+            scenarios.map(s => `
+                <option value="${s.id}">${s.name}</option>
+            `).join('');
+    }
 });

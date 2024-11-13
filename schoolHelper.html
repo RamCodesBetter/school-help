@@ -52,6 +52,28 @@
                     <h2>Total Grade</h2>
                     <span id="totalGrade">0% (F)</span>
                 </div>
+                <div class="grade-prediction">
+                    <h2>Grade Predictions</h2>
+                    <div class="scenario-controls">
+                        <button id="newScenario" aria-label="Create new what-if scenario">
+                            New Scenario
+                        </button>
+                        <select id="scenarioSelect" aria-label="Select saved scenario">
+                            <option value="">Select Scenario</option>
+                        </select>
+                    </div>
+                    <div class="prediction-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Minimum Grade Needed:</span>
+                            <span id="minGradeNeeded">--%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Projected Final Grade:</span>
+                            <span id="projectedGrade">--%</span>
+                        </div>
+                    </div>
+                    <div id="scenarioContainer"></div>
+                </div>
             </div>
         </div>
     </div>
