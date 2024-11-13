@@ -176,6 +176,17 @@ function initializeCategoryManagement() {
     });
 }
 
+// Add this function to global scope (before calculateTotal)
+function updateGradeColor(percentage) {
+    const totalGradeSpan = document.getElementById('totalGrade');
+    if (!totalGradeSpan) return;
+    
+    // Create a color gradient from red to green
+    const red = percentage < 60 ? 255 : Math.round(255 * (100 - percentage) / 40);
+    const green = percentage < 60 ? Math.round(255 * percentage / 60) : 255;
+    totalGradeSpan.style.color = `rgb(${red}, ${green}, 0)`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const addAssignmentBtn = document.getElementById('addAssignment');
     const totalGradeSpan = document.getElementById('totalGrade');
@@ -630,14 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     };
 
-    function updateGradeColor(percentage) {
-        // Create a color gradient from red to green
-        const red = percentage < 60 ? 255 : Math.round(255 * (100 - percentage) / 40);
-        const green = percentage < 60 ? Math.round(255 * percentage / 60) : 255;
-        totalGradeSpan.style.color = `rgb(${red}, ${green}, 0)`;
-    }
-
-    // Add event listener for grading scale changes
+    // Keep the grading scale change event listener
     document.getElementById('gradingScale').addEventListener('change', () => {
         calculateTotal();
     });
