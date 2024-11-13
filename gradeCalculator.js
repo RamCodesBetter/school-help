@@ -105,8 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('processPaste').addEventListener('click', async () => {
-        const pasteContent = document.getElementById('canvasPaste').value;
-        if (!pasteContent) {
+        const button = document.getElementById('processPaste');
+        const textarea = document.getElementById('canvasPaste');
+
+        if (!textarea.value) {
             alert('Please paste your Canvas grades first!');
             return;
         }
