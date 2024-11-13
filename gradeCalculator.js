@@ -127,24 +127,15 @@ document.addEventListener('DOMContentLoaded', () => {
             progressBar.style.transform = 'scaleX(0.3)';
             await new Promise(resolve => setTimeout(resolve, 100));
             
-            // Parse grades and immediately update analytics
             assignments = parseCanvasGrades(textarea.value);
+            console.log('Parsed assignments:', assignments);
+            
+            progressBar.style.transform = 'scaleX(0.6)';
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             calculateTotal();
             updateCategorySummaries();
             updateAnalytics();
-            
-            // Track initial grades
-            assignments.forEach(assignment => {
-                if (assignment.score !== undefined && assignment.score !== null) {
-                    gradeHistory.push({
-                        date: new Date(),
-                        assignment: assignment.name,
-                        oldScore: 0,
-                        newScore: assignment.score,
-                        totalGrade: calculateTotal(true)
-                    });
-                }
-            });
             
             progressBar.style.transform = 'scaleX(1)';
             button.classList.remove('loading');
@@ -153,10 +144,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             await new Promise(resolve => setTimeout(resolve, 1000));
         } catch (error) {
+            console.error('Error processing grades:', error);
             button.classList.remove('loading');
             button.classList.add('highlight-error');
             button.textContent = 'Error processing grades';
-            console.error(error);
         } finally {
             setTimeout(() => {
                 button.disabled = false;
@@ -709,11 +700,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add this function to calculate statistics
     function updateAnalytics() {
-        if (assignments.length === 0) return;
+        if (!assignments || assignments.length === 0) {
+            console.log('No assignments to analyze');
+            return;
+        }
 
         // Filter out assignments without scores
-        const completedAssignments = assignments.filter(a => a.score !== undefined && a.score !== null);
-        if (completedAssignments.length === 0) return;
+        const completedAssignments = assignments.filter(a => 
+            a.score !== undefined && 
+            a.score !== null && 
+            a.total !== undefined && 
+            a.total !== null &&
+            a.total > 0
+        );
+
+        if (completedAssignments.length === 0) {
+            console.log('No completed assignments to analyze');
+            return;
+        }
 
         // Calculate assignment grades
         const grades = completedAssignments.map(a => (a.score / a.total) * 100);
@@ -726,6 +730,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Calculate trend
         const trend = calculateTrend();
         
+        console.log('Updating analytics:', {
+            average,
+            highest,
+            lowest,
+            trend,
+            gradesCount: grades.length
+        });
+
         // Update UI
         document.getElementById('averageGrade').textContent = 
             `${average.toFixed(2)}% (${getLetterGrade(average)})`;
