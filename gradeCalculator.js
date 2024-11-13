@@ -2,6 +2,44 @@ let assignments = [];
 let scenarios = [];
 let gradeHistory = [];
 
+const gradingScales = {
+    all: (percentage) => {
+        if (percentage >= 93) return 'A';
+        if (percentage >= 90) return 'A-';
+        if (percentage >= 87) return 'B+';
+        if (percentage >= 83) return 'B';
+        if (percentage >= 80) return 'B-';
+        if (percentage >= 77) return 'C+';
+        if (percentage >= 73) return 'C';
+        if (percentage >= 70) return 'C-';
+        if (percentage >= 67) return 'D+';
+        if (percentage >= 60) return 'D';
+        return 'F';
+    },
+    noMinus: (percentage) => {
+        if (percentage >= 90) return 'A';
+        if (percentage >= 87) return 'B+';
+        if (percentage >= 80) return 'B';
+        if (percentage >= 77) return 'C+';
+        if (percentage >= 70) return 'C';
+        if (percentage >= 67) return 'D+';
+        if (percentage >= 60) return 'D';
+        return 'F';
+    },
+    simple: (percentage) => {
+        if (percentage >= 90) return 'A';
+        if (percentage >= 80) return 'B';
+        if (percentage >= 70) return 'C';
+        if (percentage >= 60) return 'D';
+        return 'F';
+    }
+};
+
+function getLetterGrade(percentage) {
+    const scale = document.getElementById('gradingScale')?.value || 'all';
+    return gradingScales[scale](percentage);
+}
+
 function calculateTotalForAssignments(assignmentList) {
     let weightedSum = 0;
     let totalWeight = 0;
@@ -44,8 +82,11 @@ function calculateTotal(returnOnly = false) {
     if (returnOnly) return finalGrade;
     
     const letterGrade = getLetterGrade(finalGrade);
-    totalGradeSpan.textContent = `${finalGrade.toFixed(2)}% (${letterGrade})`;
-    updateGradeColor(finalGrade);
+    const totalGradeSpan = document.getElementById('totalGrade');
+    if (totalGradeSpan) {
+        totalGradeSpan.textContent = `${finalGrade.toFixed(2)}% (${letterGrade})`;
+        updateGradeColor(finalGrade);
+    }
 }
 
 function updateAnalytics() {
@@ -354,44 +395,6 @@ document.addEventListener('DOMContentLoaded', () => {
             calculateTotal();
             modal.remove();
         };
-    }
-
-    const gradingScales = {
-        all: (percentage) => {
-            if (percentage >= 93) return 'A';
-            if (percentage >= 90) return 'A-';
-            if (percentage >= 87) return 'B+';
-            if (percentage >= 83) return 'B';
-            if (percentage >= 80) return 'B-';
-            if (percentage >= 77) return 'C+';
-            if (percentage >= 73) return 'C';
-            if (percentage >= 70) return 'C-';
-            if (percentage >= 67) return 'D+';
-            if (percentage >= 60) return 'D';
-            return 'F';
-        },
-        noMinus: (percentage) => {
-            if (percentage >= 90) return 'A';
-            if (percentage >= 87) return 'B+';
-            if (percentage >= 80) return 'B';
-            if (percentage >= 77) return 'C+';
-            if (percentage >= 70) return 'C';
-            if (percentage >= 67) return 'D+';
-            if (percentage >= 60) return 'D';
-            return 'F';
-        },
-        simple: (percentage) => {
-            if (percentage >= 90) return 'A';
-            if (percentage >= 80) return 'B';
-            if (percentage >= 70) return 'C';
-            if (percentage >= 60) return 'D';
-            return 'F';
-        }
-    };
-
-    function getLetterGrade(percentage) {
-        const scale = document.getElementById('gradingScale').value;
-        return gradingScales[scale](percentage);
     }
 
     function updateCategorySummaries(maintainState = false) {
