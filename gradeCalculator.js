@@ -1,7 +1,34 @@
 document.addEventListener('DOMContentLoaded', () => {
     const addAssignmentBtn = document.getElementById('addAssignment');
     const totalGradeSpan = document.getElementById('totalGrade');
-    let assignments = []; // Store assignments in memory
+    const newScenarioBtn = document.getElementById('newScenario');
+    let assignments = [];
+    let scenarios = [];
+
+    function createScenario() {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Create New Scenario</h2>
+                <div class="scenario-form">
+                    <input type="text" id="scenarioName" placeholder="Scenario Name">
+                    <div class="remaining-assignments">
+                        ${getRemainingAssignmentsHTML()}
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button id="cancelScenario">Cancel</button>
+                    <button id="saveScenario">Save Scenario</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        setupScenarioListeners(modal);
+    }
+
+    newScenarioBtn.addEventListener('click', createScenario);
 
     const themeToggle = document.getElementById('themeToggle');
     const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
@@ -513,31 +540,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     initializeCategoryManagement();
-
-    let scenarios = [];
-
-    function createScenario() {
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <h2>Create New Scenario</h2>
-                <div class="scenario-form">
-                    <input type="text" id="scenarioName" placeholder="Scenario Name">
-                    <div class="remaining-assignments">
-                        ${getRemainingAssignmentsHTML()}
-                    </div>
-                </div>
-                <div class="modal-buttons">
-                    <button id="cancelScenario">Cancel</button>
-                    <button id="saveScenario">Save Scenario</button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-        setupScenarioListeners(modal);
-    }
 
     function getRemainingAssignmentsHTML() {
         // Get assignments with no scores
