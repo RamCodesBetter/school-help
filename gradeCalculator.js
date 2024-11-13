@@ -378,36 +378,41 @@ document.addEventListener('DOMContentLoaded', () => {
             const percentage = (categoryData.totalScore / categoryData.totalPoints) * 100;
             const letterGrade = getLetterGrade(percentage);
 
-            const assignmentsHTML = categoryAssignments.map((assignment) => {
-                const assignmentPercentage = (assignment.score / assignment.total) * 100;
-                const assignmentLetterGrade = getLetterGrade(assignmentPercentage);
-                return `
-                    <div class="assignment-detail" draggable="true" data-name="${assignment.name}" data-category="${category}">
-                        <span class="assignment-name">${assignment.name}</span>
-                        <div class="assignment-scores">
-                            <span>${assignment.score}/${assignment.total}</span>
-                            <span>(${assignmentPercentage.toFixed(2)}%)</span>
-                            <span>${assignmentLetterGrade}</span>
-                            <button class="edit-btn" onclick="editAssignment('${assignment.name}')">Edit</button>
-                            <button class="delete-btn" onclick="removeAssignment('${assignment.name}')">×</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
             const categoryDiv = document.createElement('details');
             categoryDiv.className = 'category-summary';
+            categoryDiv.dataset.category = category;
+            
+            if (maintainState && expandedCategories.includes(category)) {
+                categoryDiv.open = true;
+            }
             
             categoryDiv.innerHTML = `
-                <summary>
-                    <span class="category-name">${category}</span>
-                    <span class="category-grade">${percentage.toFixed(2)}% (${letterGrade})</span>
+                <summary class="category-header">
+                    <div class="category-info">
+                        <span class="category-name">${category}</span>
+                        <span class="category-grade">${percentage.toFixed(2)}% (${letterGrade})</span>
+                    </div>
                 </summary>
                 <div class="category-details">
                     <p>Weight: ${categoryData.weight}%</p>
                     <p>Points: ${categoryData.totalScore}/${categoryData.totalPoints}</p>
                     <div class="category-assignments" data-category="${category}">
-                        ${assignmentsHTML}
+                        ${categoryAssignments.map(assignment => {
+                            const assignmentPercentage = (assignment.score / assignment.total) * 100;
+                            const assignmentLetterGrade = getLetterGrade(assignmentPercentage);
+                            return `
+                                <div class="assignment-detail" draggable="true" data-name="${assignment.name}" data-category="${category}">
+                                    <span class="assignment-name">${assignment.name}</span>
+                                    <div class="assignment-scores">
+                                        <span>${assignment.score}/${assignment.total}</span>
+                                        <span>(${assignmentPercentage.toFixed(2)}%)</span>
+                                        <span>${assignmentLetterGrade}</span>
+                                        <button class="edit-btn" onclick="editAssignment('${assignment.name}')">Edit</button>
+                                        <button class="delete-btn" onclick="removeAssignment('${assignment.name}')">×</button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 </div>
             `;
