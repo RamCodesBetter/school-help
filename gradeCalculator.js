@@ -105,9 +105,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('processPaste').addEventListener('click', async () => {
-        const button = document.getElementById('processPaste');
-        const textarea = document.getElementById('canvasPaste');
-        
+        const pasteContent = document.getElementById('canvasPaste').value;
+        if (!pasteContent) {
+            alert('Please paste your Canvas grades first!');
+            return;
+        }
+
         // Add loading state
         button.classList.add('loading');
         button.disabled = true;
@@ -123,8 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
             progressBar.style.transform = 'scaleX(0.3)';
             await new Promise(resolve => setTimeout(resolve, 100));
             
-            const pasteContent = textarea.value;
-            assignments = parseCanvasGrades(pasteContent);
+            assignments = parseCanvasGrades(textarea.value);
             
             progressBar.style.transform = 'scaleX(0.6)';
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -268,9 +270,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return gradingScales[scale](percentage);
     }
 
-    function updateCategorySummaries() {
-        const summariesContainer = document.getElementById('categorySummaries');
-        summariesContainer.innerHTML = '';
+    function updateCategorySummaries(maintainState = false) {
+        const container = document.getElementById('categorySummaries');
+        const expandedCategories = maintainState ? 
+            Array.from(container.querySelectorAll('details[open]')).map(el => el.dataset.category) : [];
+        
+        container.innerHTML = '';
 
         const uniqueCategories = [...new Set(assignments.map(a => a.category))];
 
@@ -319,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
             
-            summariesContainer.appendChild(categoryDiv);
+            container.appendChild(categoryDiv);
         });
 
         // Add drag and drop listeners
@@ -367,6 +372,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         initializeDragAndDrop();
+
+        // Restore expanded state
+        if (maintainState) {
+            expandedCategories.forEach(category => {
+                const details = container.querySelector(`details[data-category="${category}"]`);
+                if (details) details.open = true;
+            });
+        }
     }
 
     // Helper function to calculate category grade
@@ -402,27 +415,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         modal.querySelector('#cancelAdd').onclick = () => modal.remove();
         modal.querySelector('#confirmAdd').onclick = () => {
-            const category = modal.querySelector('#categorySelect').value;
             const name = modal.querySelector('#assignmentName').value;
             const score = parseFloat(modal.querySelector('#assignmentScore').value);
             const total = parseFloat(modal.querySelector('#assignmentTotal').value);
+            const category = modal.querySelector('#categorySelect').value;
             
-            // Get weight based on category
-            const categoryData = assignments.find(a => a.category === category);
-            let weight = categoryData ? categoryData.weight : 0;
-
             if (name && !isNaN(score) && !isNaN(total)) {
                 const assignment = {
                     name: name,
                     score: score,
                     total: total,
-                    weight: weight,
                     category: category
                 };
                 assignments.push(assignment);
+                trackGradeChange(assignment, 0, score);
                 calculateTotal();
-                updateCategorySummaries();
-                updateAnalytics();
+                updateCategorySummaries(true);
                 modal.remove();
             } else {
                 alert('Please fill in all fields correctly');
@@ -431,39 +439,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Update the removeAssignment function
-    window.removeAssignment = function(assignmentName) {
-        const assignment = assignments.find(a => a.name === assignmentName);
+    window.removeAssignment = function(name) {
+        const assignment = assignments.find(a => a.name === name);
         if (!assignment) return;
-
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content delete-modal">
-                <h2>Delete Assignment</h2>
-                <p>Are you sure you want to delete "${assignmentName}"?</p>
-                <div class="current-details">
-                    <p>Score: ${assignment.score}/${assignment.total}</p>
-                    <p>Grade: ${((assignment.score/assignment.total)*100).toFixed(2)}%</p>
-                </div>
-                <div class="modal-buttons">
-                    <button id="cancelDelete">Cancel</button>
-                    <button id="confirmDelete">Delete</button>
-                </div>
-            </div>
-        `;
         
-        document.body.appendChild(modal);
-
-        modal.querySelector('#cancelDelete').onclick = () => modal.remove();
-        modal.querySelector('#confirmDelete').onclick = () => {
-            const index = assignments.findIndex(a => a.name === assignmentName);
-            if (index > -1) {
-                assignments.splice(index, 1);
-                calculateTotal();
-                updateCategorySummaries();
-            }
-            modal.remove();
-        };
+        assignments = assignments.filter(a => a.name !== name);
+        calculateTotal();
+        updateCategorySummaries(true);
+        updateAnalytics();
     };
 
     // Update the editAssignment function to use the assignment name instead of index
@@ -721,8 +704,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAnalytics() {
         if (assignments.length === 0) return;
 
+        // Filter out assignments without scores
+        const completedAssignments = assignments.filter(a => a.score !== undefined && a.score !== null);
+        if (completedAssignments.length === 0) return;
+
         // Calculate assignment grades
-        const grades = assignments.map(a => (a.score / a.total) * 100);
+        const grades = completedAssignments.map(a => (a.score / a.total) * 100);
         
         // Calculate statistics
         const average = grades.reduce((a, b) => a + b) / grades.length;

@@ -682,3 +682,29 @@ h1, h2, h3 {
 .trend-up { color: #28a745; }
 .trend-down { color: #dc3545; }
 .trend-stable { color: #ffc107; }
+
+/* Add these styles for the loading animation */
+.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.progress-bar {
+    height: 3px;
+    background: var(--accent-primary);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.highlight-success {
+    background-color: #28a745 !important;
+}
+
+.highlight-error {
+    background-color: #dc3545 !important;
+}
