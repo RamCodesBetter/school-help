@@ -124,42 +124,40 @@ document.addEventListener('DOMContentLoaded', () => {
         button.parentElement.appendChild(progressBar);
         
         try {
-            // Simulate progress
             progressBar.style.transform = 'scaleX(0.3)';
             await new Promise(resolve => setTimeout(resolve, 100));
             
+            // Parse grades and immediately update analytics
             assignments = parseCanvasGrades(textarea.value);
-            
-            progressBar.style.transform = 'scaleX(0.6)';
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
             calculateTotal();
             updateCategorySummaries();
             updateAnalytics();
             
-            progressBar.style.transform = 'scaleX(1)';
+            // Track initial grades
+            assignments.forEach(assignment => {
+                if (assignment.score !== undefined && assignment.score !== null) {
+                    gradeHistory.push({
+                        date: new Date(),
+                        assignment: assignment.name,
+                        oldScore: 0,
+                        newScore: assignment.score,
+                        totalGrade: calculateTotal(true)
+                    });
+                }
+            });
             
-            // Show success state
+            progressBar.style.transform = 'scaleX(1)';
             button.classList.remove('loading');
             button.classList.add('highlight-success');
             button.textContent = 'Success!';
             
-            // Add initial grade change to history
-            assignments.forEach(assignment => {
-                if (assignment.score) {
-                    trackGradeChange(assignment, 0, assignment.score); // Track initial grades
-                }
-            });
-            
             await new Promise(resolve => setTimeout(resolve, 1000));
         } catch (error) {
-            // Show error state
             button.classList.remove('loading');
             button.classList.add('highlight-error');
             button.textContent = 'Error processing grades';
             console.error(error);
         } finally {
-            // Reset button state
             setTimeout(() => {
                 button.disabled = false;
                 button.classList.remove('highlight-success', 'highlight-error');
