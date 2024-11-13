@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const newScenarioBtn = document.getElementById('newScenario');
     let assignments = [];
     let scenarios = [];
+    let gradeHistory = [];
 
     function createScenario() {
         const modal = document.createElement('div');
@@ -496,6 +497,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
         modal.querySelector('#cancelEdit').onclick = () => modal.remove();
         modal.querySelector('#confirmEdit').onclick = async () => {
+            const oldScore = assignment.score;
+            assignment.score = newScore;
+            trackGradeChange(assignment, oldScore, newScore);
+
             const confirmBtn = modal.querySelector('#confirmEdit');
             confirmBtn.classList.add('loading');
             confirmBtn.disabled = true;
@@ -715,5 +720,88 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         return totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0;
+    }
+
+    // Add this function to track grade changes
+    function trackGradeChange(assignment, oldScore, newScore) {
+        gradeHistory.push({
+            date: new Date(),
+            assignment: assignment.name,
+            oldScore: oldScore,
+            newScore: newScore,
+            totalGrade: calculateTotal(true)
+        });
+        updateAnalytics();
+    }
+
+    // Add this function to calculate statistics
+    function updateAnalytics() {
+        if (assignments.length === 0) return;
+
+        // Calculate assignment grades
+        const grades = assignments.map(a => (a.score / a.total) * 100);
+        
+        // Calculate statistics
+        const average = grades.reduce((a, b) => a + b) / grades.length;
+        const highest = Math.max(...grades);
+        const lowest = Math.min(...grades);
+        
+        // Calculate trend
+        const trend = calculateTrend();
+        
+        // Update UI
+        document.getElementById('averageGrade').textContent = 
+            `${average.toFixed(2)}% (${getLetterGrade(average)})`;
+        document.getElementById('highestGrade').textContent = 
+            `${highest.toFixed(2)}% (${getLetterGrade(highest)})`;
+        document.getElementById('lowestGrade').textContent = 
+            `${lowest.toFixed(2)}% (${getLetterGrade(lowest)})`;
+        document.getElementById('gradeTrend').innerHTML = getTrendHTML(trend);
+        
+        updateHistoryDisplay();
+    }
+
+    function calculateTrend() {
+        if (gradeHistory.length < 2) return 'stable';
+        
+        const recent = gradeHistory.slice(-3);
+        const grades = recent.map(h => h.totalGrade);
+        
+        if (grades.every((g, i) => i === 0 || g >= grades[i - 1])) return 'up';
+        if (grades.every((g, i) => i === 0 || g <= grades[i - 1])) return 'down';
+        return 'stable';
+    }
+
+    function getTrendHTML(trend) {
+        const arrows = {
+            up: '<span class="trend-up">↑ Improving</span>',
+            down: '<span class="trend-down">↓ Declining</span>',
+            stable: '<span class="trend-stable">→ Stable</span>'
+        };
+        return arrows[trend] || arrows.stable;
+    }
+
+    function updateHistoryDisplay() {
+        const container = document.getElementById('historyContainer');
+        const recentHistory = gradeHistory.slice(-5).reverse();
+        
+        container.innerHTML = recentHistory.map(h => `
+            <div class="history-item">
+                <div>
+                    <strong>${h.assignment}</strong>
+                    <span>${h.oldScore} → ${h.newScore} points</span>
+                </div>
+                <span class="date">${formatDate(h.date)}</span>
+            </div>
+        `).join('');
+    }
+
+    function formatDate(date) {
+        return new Intl.DateTimeFormat('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).format(date);
     }
 });
