@@ -152,14 +152,38 @@ function updateAnalytics() {
             return indexA - indexB;
         });
 
+        // Calculate grades and format labels
         const assignmentGrades = completedAssignments.map(a => (a.score / a.total) * 100);
-        const assignmentLabels = completedAssignments.map(a => a.name);
-        const overallGrades = gradeHistory.map(h => h.totalGrade);
+        const assignmentLabels = completedAssignments.map(a => {
+            // Truncate long assignment names and add line breaks
+            const maxLength = 20;
+            let name = a.name;
+            if (name.length > maxLength) {
+                name = name.substring(0, maxLength) + '...';
+            }
+            // Split into multiple lines if contains spaces
+            return name.replace(/\s+/g, '\n');
+        });
+
+        // Calculate running overall grade
+        const overallGrades = [];
+        let runningGrade = 0;
+        completedAssignments.forEach((_, index) => {
+            const currentAssignments = completedAssignments.slice(0, index + 1);
+            runningGrade = calculateTotalForAssignments(currentAssignments);
+            overallGrades.push(runningGrade);
+        });
 
         gradeChart.data.labels = assignmentLabels;
         gradeChart.data.datasets[0].data = assignmentGrades;
-        gradeChart.data.datasets[1].data = new Array(assignmentLabels.length).fill(null)
-            .map((_, i) => overallGrades[i] || null);
+        gradeChart.data.datasets[1].data = overallGrades;
+        
+        // Update chart options for better formatting
+        gradeChart.options.scales.y.min = 0;
+        gradeChart.options.scales.y.max = 100;
+        gradeChart.options.scales.x.ticks.maxRotation = 0;
+        gradeChart.options.scales.x.ticks.autoSkip = false;
+        
         gradeChart.update();
     }
 }
@@ -976,13 +1000,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     borderColor: '#1976d2',
                     backgroundColor: 'rgba(25, 118, 210, 0.1)',
                     data: [],
-                    fill: true
+                    fill: true,
+                    tension: 0.1
                 }, {
                     label: 'Overall Grade',
                     borderColor: '#28a745',
                     backgroundColor: 'rgba(40, 167, 69, 0.1)',
                     data: [],
-                    fill: true
+                    fill: true,
+                    tension: 0.1
                 }]
             },
             options: {
@@ -992,8 +1018,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     y: {
                         beginAtZero: true,
                         max: 100,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
                         ticks: {
-                            callback: value => `${value}%`
+                            callback: value => `${value}%`,
+                            stepSize: 20
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 0,
+                            font: {
+                                size: 11
+                            }
                         }
                     }
                 },
@@ -1006,6 +1048,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const letterGrade = getLetterGrade(value);
                                 return `${label}: ${value.toFixed(2)}% (${letterGrade})`;
                             }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
                         }
                     }
                 }
