@@ -144,6 +144,13 @@ document.addEventListener('DOMContentLoaded', () => {
             button.classList.add('highlight-success');
             button.textContent = 'Success!';
             
+            // Add initial grade change to history
+            assignments.forEach(assignment => {
+                if (assignment.score) {
+                    trackGradeChange(assignment, 0, assignment.score); // Track initial grades
+                }
+            });
+            
             await new Promise(resolve => setTimeout(resolve, 1000));
         } catch (error) {
             // Show error state
