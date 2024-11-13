@@ -575,11 +575,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function calculateMinimumNeeded(targetGrade = 90) {
         const remaining = assignments.filter(a => !a.score || a.score === 0);
+        if (remaining.length === 0) return 0;
+        
         const totalRemainingPoints = remaining.reduce((sum, a) => sum + a.total, 0);
-        const currentTotal = calculateTotal(true); // Add parameter to return value instead of updating UI
+        const currentTotal = calculateTotal(true);
+        
+        if (totalRemainingPoints === 0) return 0;
         
         const pointsNeeded = (targetGrade - currentTotal) * totalRemainingPoints / 100;
-        return (pointsNeeded / totalRemainingPoints) * 100;
+        const percentageNeeded = (pointsNeeded / totalRemainingPoints) * 100;
+        
+        return isNaN(percentageNeeded) ? 0 : Math.max(0, percentageNeeded);
     }
     
     // Event Listeners
@@ -625,7 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updatePredictions() {
         const minNeeded = calculateMinimumNeeded();
         document.getElementById('minGradeNeeded').textContent = 
-            `${minNeeded.toFixed(2)}%`;
+            minNeeded === 0 ? 'Target achieved!' : `${minNeeded.toFixed(2)}%`;
         
         if (scenarios.length > 0) {
             const latestScenario = scenarios[scenarios.length - 1];
