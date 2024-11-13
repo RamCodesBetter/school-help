@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             calculateTotal();
             updateCategorySummaries();
+            updateAnalytics();
             
             progressBar.style.transform = 'scaleX(1)';
             
@@ -421,6 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 assignments.push(assignment);
                 calculateTotal();
                 updateCategorySummaries();
+                updateAnalytics();
                 modal.remove();
             } else {
                 alert('Please fill in all fields correctly');
@@ -498,37 +500,18 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.querySelector('#cancelEdit').onclick = () => modal.remove();
         modal.querySelector('#confirmEdit').onclick = async () => {
             const oldScore = assignment.score;
+            const newScore = parseFloat(modal.querySelector('#editScore').value);
+            
+            if (isNaN(newScore)) {
+                alert('Please enter a valid score');
+                return;
+            }
+            
             assignment.score = newScore;
             trackGradeChange(assignment, oldScore, newScore);
-
-            const confirmBtn = modal.querySelector('#confirmEdit');
-            confirmBtn.classList.add('loading');
-            confirmBtn.disabled = true;
-            
-            try {
-                const newName = modal.querySelector('#editName').value;
-                const newScore = parseFloat(modal.querySelector('#editScore').value);
-                const newTotal = parseFloat(modal.querySelector('#editTotal').value);
-                
-                if (newName && !isNaN(newScore) && !isNaN(newTotal)) {
-                    assignment.name = newName;
-                    assignment.score = newScore;
-                    assignment.total = newTotal;
-                    
-                    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate processing
-                    calculateTotal();
-                    updateCategorySummaries();
-                    modal.remove();
-                } else {
-                    confirmBtn.classList.remove('loading');
-                    confirmBtn.classList.add('highlight-error');
-                    alert('Please fill in all fields correctly');
-                    setTimeout(() => confirmBtn.classList.remove('highlight-error'), 1000);
-                }
-            } finally {
-                confirmBtn.disabled = false;
-                confirmBtn.classList.remove('loading');
-            }
+            calculateTotal();
+            updateCategorySummaries();
+            modal.remove();
         };
     };
 
