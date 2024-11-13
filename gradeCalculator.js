@@ -101,11 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // After parsing is complete, update analytics
-        setTimeout(() => {
-            updateAnalytics();
-        }, 0);
-        
         return assignments;
     }
 
@@ -236,38 +231,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    function calculateTotal(returnValue = false) {
-        let weightedSum = 0;
-        let totalWeight = 0;
+    function calculateTotal(returnOnly = false) {
+        const finalGrade = calculateTotalForAssignments(assignments);
         
-        // Group assignments by category
-        const categories = {};
-        assignments.forEach(a => {
-            if (!categories[a.category]) {
-                categories[a.category] = {
-                    assignments: [],
-                    weight: a.weight
-                };
-            }
-            categories[a.category].assignments.push(a);
-        });
+        if (returnOnly) return finalGrade;
         
-        // Calculate weighted sum
-        for (const category in categories) {
-            const categoryData = categories[category];
-            const categoryScore = calculateCategoryScore(categoryData.assignments);
-            weightedSum += categoryScore * categoryData.weight;
-            totalWeight += categoryData.weight;
-        }
-        
-        const total = totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0;
-        
-        if (!returnValue) {
-            totalGradeSpan.textContent = `${total.toFixed(2)}% (${getLetterGrade(total)})`;
-            updateAnalytics();
-        }
-        
-        return total;
+        const letterGrade = getLetterGrade(finalGrade);
+        totalGradeSpan.textContent = `${finalGrade.toFixed(2)}% (${letterGrade})`;
+        updateGradeColor(finalGrade);
     }
 
     const gradingScales = {
@@ -418,8 +389,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (details) details.open = true;
             });
         }
-
-        updateAnalytics();
     }
 
     // Helper function to calculate category grade
