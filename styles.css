@@ -708,3 +708,17 @@ h1, h2, h3 {
 .highlight-error {
     background-color: #dc3545 !important;
 }
+
+.grade-graph {
+    margin: 2rem 0;
+    padding: 1rem;
+    background: var(--bg-primary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+#gradeChart {
+    width: 100% !important;
+    height: 300px !important;
+    margin: 0 auto;
+}

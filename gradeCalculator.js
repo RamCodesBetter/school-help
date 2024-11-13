@@ -1,6 +1,7 @@
 let assignments = [];
 let scenarios = [];
 let gradeHistory = [];
+let gradeChart = null;
 
 const gradingScales = {
     all: (percentage) => {
@@ -138,6 +139,29 @@ function updateAnalytics() {
     document.getElementById('gradeTrend').innerHTML = getTrendHTML(trend);
     
     updateHistoryDisplay();
+
+    // Update the chart
+    if (gradeChart) {
+        const completedAssignments = assignments.filter(a => 
+            a.score !== undefined && 
+            a.total !== undefined &&
+            a.total > 0
+        ).sort((a, b) => {
+            const indexA = gradeHistory.findIndex(h => h.assignment === a.name);
+            const indexB = gradeHistory.findIndex(h => h.assignment === b.name);
+            return indexA - indexB;
+        });
+
+        const assignmentGrades = completedAssignments.map(a => (a.score / a.total) * 100);
+        const assignmentLabels = completedAssignments.map(a => a.name);
+        const overallGrades = gradeHistory.map(h => h.totalGrade);
+
+        gradeChart.data.labels = assignmentLabels;
+        gradeChart.data.datasets[0].data = assignmentGrades;
+        gradeChart.data.datasets[1].data = new Array(assignmentLabels.length).fill(null)
+            .map((_, i) => overallGrades[i] || null);
+        gradeChart.update();
+    }
 }
 
 function calculateTrend() {
@@ -938,4 +962,57 @@ document.addEventListener('DOMContentLoaded', () => {
         
         return totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0;
     }
+
+    // Add this function to initialize the chart
+    function initializeGradeChart() {
+        const ctx = document.getElementById('gradeChart').getContext('2d');
+        
+        gradeChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Assignment Grades',
+                    borderColor: '#1976d2',
+                    backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                    data: [],
+                    fill: true
+                }, {
+                    label: 'Overall Grade',
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    data: [],
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: value => `${value}%`
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const label = context.dataset.label;
+                                const value = context.parsed.y;
+                                const letterGrade = getLetterGrade(value);
+                                return `${label}: ${value.toFixed(2)}% (${letterGrade})`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Add this to your DOMContentLoaded event listener
+    initializeGradeChart();
 });

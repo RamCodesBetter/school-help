@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canvas Grade Calculator</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
@@ -93,6 +94,9 @@
                             <span class="stat-label">Grade Trend</span>
                             <span id="gradeTrend">--</span>
                         </div>
+                    </div>
+                    <div class="grade-graph">
+                        <canvas id="gradeChart"></canvas>
                     </div>
                     <div class="grade-history">
                         <h3>Assignment History</h3>
