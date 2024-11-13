@@ -8,8 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set initial theme
     document.documentElement.setAttribute('data-theme', 
-        localStorage.getItem('theme') || 
-        (prefersDarkScheme.matches ? 'dark' : 'light')
+        localStorage.getItem('theme') || 'light'
     );
 
     themeToggle.addEventListener('click', () => {
