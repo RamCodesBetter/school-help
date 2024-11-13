@@ -157,7 +157,7 @@ function updateAnalytics() {
         const assignmentLabels = completedAssignments.map(a => {
             const name = a.name;
             // Truncate and clean up the name
-            const maxLength = 15;
+            const maxLength = 12;
             if (name.length > maxLength) {
                 return name.substring(0, maxLength) + '...';
             }
@@ -1000,14 +1000,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     backgroundColor: 'rgba(25, 118, 210, 0.1)',
                     data: [],
                     fill: true,
-                    tension: 0.1
+                    tension: 0.1,
+                    pointRadius: 4,                    // Make points larger
+                    pointHoverRadius: 6,               // Larger on hover
+                    pointBackgroundColor: '#1976d2',   // Match line color
+                    pointBorderColor: '#fff',          // White border
+                    pointBorderWidth: 2                // Visible border
                 }, {
                     label: 'Overall Grade',
                     borderColor: '#28a745',
                     backgroundColor: 'rgba(40, 167, 69, 0.1)',
                     data: [],
                     fill: true,
-                    tension: 0.1
+                    tension: 0.1,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#28a745',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
                 }]
             },
             options: {
@@ -1022,7 +1032,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         },
                         ticks: {
                             callback: value => `${value}%`,
-                            stepSize: 20
+                            stepSize: 20,
+                            font: {
+                                size: 11
+                            }
                         }
                     },
                     x: {
@@ -1034,8 +1047,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             maxRotation: 45,
                             minRotation: 45,
                             font: {
-                                size: 10
-                            }
+                                size: 11
+                            },
+                            padding: 11    // Add more padding between labels
                         }
                     }
                 },
@@ -1054,8 +1068,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         position: 'top',
                         labels: {
                             usePointStyle: true,
-                            padding: 20
+                            padding: 20,
+                            font: {
+                                size: 12
+                            }
                         }
+                    }
+                },
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 10,
+                        top: 10,
+                        bottom: 20    // Extra padding at bottom for labels
                     }
                 }
             }
