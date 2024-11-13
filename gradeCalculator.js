@@ -2,6 +2,42 @@ let assignments = [];
 let scenarios = [];
 let gradeHistory = [];
 
+function calculateTotalForAssignments(assignmentList) {
+    let weightedSum = 0;
+    let totalWeight = 0;
+    
+    // Group assignments by category
+    const categories = {};
+    assignmentList.forEach(assignment => {
+        if (!categories[assignment.category]) {
+            categories[assignment.category] = {
+                assignments: [],
+                weight: assignment.weight || 0
+            };
+        }
+        categories[assignment.category].assignments.push(assignment);
+    });
+    
+    // Calculate weighted average for each category
+    for (const category in categories) {
+        const categoryData = categories[category];
+        const categoryAssignments = categoryData.assignments;
+        
+        if (categoryAssignments.length === 0) continue;
+        
+        const categoryScore = categoryAssignments.reduce((sum, a) => sum + (a.score || 0), 0);
+        const categoryTotal = categoryAssignments.reduce((sum, a) => sum + (a.total || 0), 0);
+        const categoryWeight = categoryData.weight;
+        
+        if (categoryTotal > 0) {
+            weightedSum += (categoryScore / categoryTotal) * categoryWeight;
+            totalWeight += categoryWeight;
+        }
+    }
+    
+    return totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0;
+}
+
 function calculateTotal(returnOnly = false) {
     const finalGrade = calculateTotalForAssignments(assignments);
     
