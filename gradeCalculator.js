@@ -187,6 +187,86 @@ function updateGradeColor(percentage) {
     totalGradeSpan.style.color = `rgb(${red}, ${green}, 0)`;
 }
 
+// Add this function before updateCategorySummaries
+function initializeDragAndDrop() {
+    const categories = document.querySelectorAll('.category-summary');
+    
+    categories.forEach(category => {
+        category.setAttribute('draggable', 'true');
+        
+        category.addEventListener('dragstart', (e) => {
+            e.stopPropagation();
+            category.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', category.dataset.category);
+        });
+        
+        category.addEventListener('dragend', () => {
+            category.classList.remove('dragging');
+        });
+        
+        category.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const draggingCategory = document.querySelector('.dragging');
+            if (!draggingCategory || draggingCategory === category) return;
+            
+            const categories = [...document.querySelectorAll('.category-summary')];
+            const currentPos = categories.indexOf(draggingCategory);
+            const newPos = categories.indexOf(category);
+            
+            if (currentPos < newPos) {
+                category.parentNode.insertBefore(draggingCategory, category.nextSibling);
+            } else {
+                category.parentNode.insertBefore(draggingCategory, category);
+            }
+        });
+    });
+    
+    // Add drag and drop for assignments within categories
+    const assignmentDetails = document.querySelectorAll('.assignment-detail');
+    const dropZones = document.querySelectorAll('.category-assignments');
+    
+    assignmentDetails.forEach(assignment => {
+        assignment.setAttribute('draggable', 'true');
+        
+        assignment.addEventListener('dragstart', (e) => {
+            e.stopPropagation();
+            assignment.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', assignment.dataset.name);
+        });
+        
+        assignment.addEventListener('dragend', () => {
+            assignment.classList.remove('dragging');
+            dropZones.forEach(zone => zone.classList.remove('drag-over'));
+        });
+    });
+    
+    dropZones.forEach(zone => {
+        zone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            zone.classList.add('drag-over');
+        });
+        
+        zone.addEventListener('dragleave', () => {
+            zone.classList.remove('drag-over');
+        });
+        
+        zone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            
+            const assignmentName = e.dataTransfer.getData('text/plain');
+            const newCategory = zone.closest('.category-summary').dataset.category;
+            const assignment = assignments.find(a => a.name === assignmentName);
+            
+            if (assignment && assignment.category !== newCategory) {
+                assignment.category = newCategory;
+                calculateTotal();
+                updateCategorySummaries(true);
+            }
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const addAssignmentBtn = document.getElementById('addAssignment');
     const totalGradeSpan = document.getElementById('totalGrade');
