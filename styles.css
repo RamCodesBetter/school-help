@@ -44,7 +44,7 @@ body {
 
 h1 {
     text-align: center;
-    color: #333;
+    color: var(--text-primary);
     margin-bottom: 2rem;
 }
 
@@ -280,7 +280,7 @@ button:hover {
 }
 
 .modal-content {
-    background-color: white;
+    background-color: var(--bg-secondary);
     padding: 2rem;
     border-radius: 8px;
     width: 90%;
@@ -289,7 +289,7 @@ button:hover {
 
 .modal-content h2 {
     margin-bottom: 1.5rem;
-    color: #333;
+    color: var(--text-primary);
 }
 
 .modal-content select,
@@ -479,12 +479,12 @@ h1, h2, h3 {
 
 /* Add styles for the instructions */
 .instructions {
-    background-color: #fff;
+    background-color: var(--bg-secondary);
     padding: 2rem;
     border-radius: 8px;
     margin-bottom: 2rem;
     box-shadow: 0 2px 8px rgba(25, 118, 210, 0.1);
-    border: 1px solid #90caf9;
+    border: 1px solid var(--border-color);
 }
 
 .instructions h2 {
@@ -499,7 +499,7 @@ h1, h2, h3 {
 
 .instructions li {
     margin-bottom: 0.5rem;
-    color: #444;
+    color: var(--text-secondary);
 }
 
 .instructions .tip {
