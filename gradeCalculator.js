@@ -155,14 +155,13 @@ function updateAnalytics() {
         // Calculate grades and format labels
         const assignmentGrades = completedAssignments.map(a => (a.score / a.total) * 100);
         const assignmentLabels = completedAssignments.map(a => {
-            // Truncate long assignment names and add line breaks
-            const maxLength = 20;
-            let name = a.name;
+            const name = a.name;
+            // Truncate and clean up the name
+            const maxLength = 15;
             if (name.length > maxLength) {
-                name = name.substring(0, maxLength) + '...';
+                return name.substring(0, maxLength) + '...';
             }
-            // Split into multiple lines if contains spaces
-            return name.replace(/\s+/g, '\n');
+            return name;
         });
 
         // Calculate running overall grade
@@ -1031,10 +1030,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             display: false
                         },
                         ticks: {
-                            autoSkip: false,
-                            maxRotation: 0,
+                            autoSkip: true,
+                            maxRotation: 45,
+                            minRotation: 45,
                             font: {
-                                size: 11
+                                size: 10
                             }
                         }
                     }
