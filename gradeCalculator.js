@@ -192,50 +192,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateTotal(returnOnly = false) {
-        const oldGrade = totalGradeSpan.textContent;
+        const finalGrade = calculateTotalForAssignments(assignments);
         
-        const categories = {};
-        
-        // First pass: collect all assignments by category
-        assignments.forEach(assignment => {
-            if (!categories[assignment.category]) {
-                categories[assignment.category] = {
-                    assignments: [],
-                    weight: assignment.weight
-                };
-            }
-            categories[assignment.category].assignments.push(assignment);
-        });
-
-        let weightedSum = 0;
-        let totalWeight = 0;
-
-        // Second pass: calculate each category's contribution
-        for (const category in categories) {
-            const cat = categories[category];
-            const categoryAssignments = cat.assignments;
-            
-            if (categoryAssignments.length > 0) {
-                const categoryScore = categoryAssignments.reduce((sum, a) => sum + a.score, 0);
-                const categoryTotal = categoryAssignments.reduce((sum, a) => sum + a.total, 0);
-                const categoryPercentage = categoryScore / categoryTotal;
-                
-                weightedSum += categoryPercentage * cat.weight;
-                totalWeight += cat.weight;
-            }
-        }
-
-        const finalGrade = (weightedSum / totalWeight) * 100;
-        const letterGrade = getLetterGrade(finalGrade);
-
         if (returnOnly) return finalGrade;
         
-        // Add transition effect if grade changed
-        if (oldGrade !== `${finalGrade.toFixed(2)}% (${letterGrade})`) {
-            totalGradeSpan.classList.add('highlight-success');
-            setTimeout(() => totalGradeSpan.classList.remove('highlight-success'), 1000);
-        }
-        
+        const letterGrade = getLetterGrade(finalGrade);
         totalGradeSpan.textContent = `${finalGrade.toFixed(2)}% (${letterGrade})`;
         updateGradeColor(finalGrade);
     }
@@ -678,5 +639,73 @@ document.addEventListener('DOMContentLoaded', () => {
             scenarios.map(s => `
                 <option value="${s.id}">${s.name}</option>
             `).join('');
+    }
+
+    function setupScenarioListeners(modal) {
+        // Cancel button listener
+        modal.querySelector('#cancelScenario').addEventListener('click', () => {
+            modal.remove();
+        });
+
+        // Save button listener
+        modal.querySelector('#saveScenario').addEventListener('click', () => {
+            const name = modal.querySelector('#scenarioName').value;
+            if (!name) {
+                alert('Please enter a scenario name');
+                return;
+            }
+
+            const saveBtn = modal.querySelector('#saveScenario');
+            saveBtn.classList.add('loading');
+            saveBtn.disabled = true;
+
+            try {
+                saveScenario(modal);
+            } finally {
+                saveBtn.classList.remove('loading');
+                saveBtn.disabled = false;
+            }
+        });
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+
+        // Focus on name input when modal opens
+        modal.querySelector('#scenarioName').focus();
+    }
+
+    function calculateTotalForAssignments(assignmentList) {
+        let weightedSum = 0;
+        let totalWeight = 0;
+        
+        // Group assignments by category
+        const categories = {};
+        assignmentList.forEach(assignment => {
+            if (!categories[assignment.category]) {
+                categories[assignment.category] = [];
+            }
+            categories[assignment.category].push(assignment);
+        });
+        
+        // Calculate weighted average for each category
+        for (const category in categories) {
+            const categoryAssignments = categories[category];
+            if (categoryAssignments.length === 0) continue;
+            
+            const categoryScore = categoryAssignments.reduce((sum, a) => sum + a.score, 0);
+            const categoryTotal = categoryAssignments.reduce((sum, a) => sum + a.total, 0);
+            const categoryWeight = categoryAssignments[0].weight;
+            
+            if (categoryTotal > 0) {
+                weightedSum += (categoryScore / categoryTotal) * categoryWeight;
+                totalWeight += categoryWeight;
+            }
+        }
+        
+        return totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0;
     }
 });
