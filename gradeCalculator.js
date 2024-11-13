@@ -76,19 +76,56 @@ document.addEventListener('DOMContentLoaded', () => {
         return assignments;
     }
 
-    document.getElementById('processPaste').addEventListener('click', () => {
+    document.getElementById('processPaste').addEventListener('click', async () => {
         const button = document.getElementById('processPaste');
+        const textarea = document.getElementById('canvasPaste');
+        
+        // Add loading state
+        button.classList.add('loading');
         button.disabled = true;
         button.textContent = 'Processing...';
         
+        // Add progress bar
+        const progressBar = document.createElement('div');
+        progressBar.className = 'progress-bar';
+        button.parentElement.appendChild(progressBar);
+        
         try {
-            const pasteContent = document.getElementById('canvasPaste').value;
+            // Simulate progress
+            progressBar.style.transform = 'scaleX(0.3)';
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const pasteContent = textarea.value;
             assignments = parseCanvasGrades(pasteContent);
+            
+            progressBar.style.transform = 'scaleX(0.6)';
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             calculateTotal();
             updateCategorySummaries();
+            
+            progressBar.style.transform = 'scaleX(1)';
+            
+            // Show success state
+            button.classList.remove('loading');
+            button.classList.add('highlight-success');
+            button.textContent = 'Success!';
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+            // Show error state
+            button.classList.remove('loading');
+            button.classList.add('highlight-error');
+            button.textContent = 'Error processing grades';
+            console.error(error);
         } finally {
-            button.disabled = false;
-            button.textContent = 'Process Canvas Grades';
+            // Reset button state
+            setTimeout(() => {
+                button.disabled = false;
+                button.classList.remove('highlight-success', 'highlight-error');
+                button.textContent = 'Process Canvas Grades';
+                progressBar.remove();
+            }, 1500);
         }
     });
 
@@ -155,6 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateTotal() {
+        const oldGrade = totalGradeSpan.textContent;
+        
         const categories = {};
         
         // First pass: collect all assignments by category
@@ -188,6 +227,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const finalGrade = (weightedSum / totalWeight) * 100;
         const letterGrade = getLetterGrade(finalGrade);
+        
+        // Add transition effect if grade changed
+        if (oldGrade !== `${finalGrade.toFixed(2)}% (${letterGrade})`) {
+            totalGradeSpan.classList.add('highlight-success');
+            setTimeout(() => totalGradeSpan.classList.remove('highlight-success'), 1000);
+        }
+        
         totalGradeSpan.textContent = `${finalGrade.toFixed(2)}% (${letterGrade})`;
         updateGradeColor(finalGrade);
     }
@@ -459,20 +505,34 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(modal);
     
         modal.querySelector('#cancelEdit').onclick = () => modal.remove();
-        modal.querySelector('#confirmEdit').onclick = () => {
-            const newName = modal.querySelector('#editName').value;
-            const newScore = parseFloat(modal.querySelector('#editScore').value);
-            const newTotal = parseFloat(modal.querySelector('#editTotal').value);
-    
-            if (newName && !isNaN(newScore) && !isNaN(newTotal)) {
-                assignment.name = newName;
-                assignment.score = newScore;
-                assignment.total = newTotal;
-                calculateTotal();
-                updateCategorySummaries();
-                modal.remove();
-            } else {
-                alert('Please fill in all fields correctly');
+        modal.querySelector('#confirmEdit').onclick = async () => {
+            const confirmBtn = modal.querySelector('#confirmEdit');
+            confirmBtn.classList.add('loading');
+            confirmBtn.disabled = true;
+            
+            try {
+                const newName = modal.querySelector('#editName').value;
+                const newScore = parseFloat(modal.querySelector('#editScore').value);
+                const newTotal = parseFloat(modal.querySelector('#editTotal').value);
+                
+                if (newName && !isNaN(newScore) && !isNaN(newTotal)) {
+                    assignment.name = newName;
+                    assignment.score = newScore;
+                    assignment.total = newTotal;
+                    
+                    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate processing
+                    calculateTotal();
+                    updateCategorySummaries();
+                    modal.remove();
+                } else {
+                    confirmBtn.classList.remove('loading');
+                    confirmBtn.classList.add('highlight-error');
+                    alert('Please fill in all fields correctly');
+                    setTimeout(() => confirmBtn.classList.remove('highlight-error'), 1000);
+                }
+            } finally {
+                confirmBtn.disabled = false;
+                confirmBtn.classList.remove('loading');
             }
         };
     };
