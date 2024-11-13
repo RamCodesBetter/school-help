@@ -267,6 +267,43 @@ function initializeDragAndDrop() {
     });
 }
 
+function formatDate(date) {
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).format(date);
+}
+
+function updateHistoryDisplay() {
+    const container = document.getElementById('historyContainer');
+    if (!container) return;
+    
+    const recentHistory = gradeHistory.slice(-5).reverse();
+    
+    container.innerHTML = recentHistory.map(h => `
+        <div class="history-item">
+            <div>
+                <strong>${h.assignment}</strong>
+                <span>${h.oldScore} → ${h.newScore} points</span>
+            </div>
+            <span class="date">${formatDate(h.date)}</span>
+        </div>
+    `).join('');
+}
+
+function trackGradeChange(assignment, oldScore, newScore) {
+    gradeHistory.push({
+        date: new Date(),
+        assignment: assignment.name,
+        oldScore: oldScore,
+        newScore: newScore,
+        totalGrade: calculateTotal(true)
+    });
+    updateAnalytics();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const addAssignmentBtn = document.getElementById('addAssignment');
     const totalGradeSpan = document.getElementById('totalGrade');
@@ -900,41 +937,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         return totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0;
-    }
-
-    // Add this function to track grade changes
-    function trackGradeChange(assignment, oldScore, newScore) {
-        gradeHistory.push({
-            date: new Date(),
-            assignment: assignment.name,
-            oldScore: oldScore,
-            newScore: newScore,
-            totalGrade: calculateTotal(true)
-        });
-        updateAnalytics();
-    }
-
-    function updateHistoryDisplay() {
-        const container = document.getElementById('historyContainer');
-        const recentHistory = gradeHistory.slice(-5).reverse();
-        
-        container.innerHTML = recentHistory.map(h => `
-            <div class="history-item">
-                <div>
-                    <strong>${h.assignment}</strong>
-                    <span>${h.oldScore} → ${h.newScore} points</span>
-                </div>
-                <span class="date">${formatDate(h.date)}</span>
-            </div>
-        `).join('');
-    }
-
-    function formatDate(date) {
-        return new Intl.DateTimeFormat('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        }).format(date);
     }
 });
