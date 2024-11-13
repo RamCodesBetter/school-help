@@ -1,10 +1,110 @@
+let assignments = [];
+let scenarios = [];
+let gradeHistory = [];
+
+function calculateTotal(returnOnly = false) {
+    const finalGrade = calculateTotalForAssignments(assignments);
+    
+    if (returnOnly) return finalGrade;
+    
+    const letterGrade = getLetterGrade(finalGrade);
+    totalGradeSpan.textContent = `${finalGrade.toFixed(2)}% (${letterGrade})`;
+    updateGradeColor(finalGrade);
+}
+
+function updateAnalytics() {
+    if (!assignments || assignments.length === 0) {
+        console.log('No assignments to analyze');
+        return;
+    }
+
+    // Filter out assignments without scores
+    const completedAssignments = assignments.filter(a => 
+        a.score !== undefined && 
+        a.score !== null && 
+        a.total !== undefined && 
+        a.total !== null &&
+        a.total > 0
+    );
+
+    if (completedAssignments.length === 0) {
+        console.log('No completed assignments to analyze');
+        return;
+    }
+
+    // Calculate assignment grades
+    const grades = completedAssignments.map(a => (a.score / a.total) * 100);
+    
+    // Calculate statistics
+    const average = grades.reduce((a, b) => a + b) / grades.length;
+    const highest = Math.max(...grades);
+    const lowest = Math.min(...grades);
+    
+    // Calculate trend
+    const trend = calculateTrend();
+    
+    console.log('Updating analytics:', {
+        average,
+        highest,
+        lowest,
+        trend,
+        gradesCount: grades.length
+    });
+
+    // Update UI
+    document.getElementById('averageGrade').textContent = 
+        `${average.toFixed(2)}% (${getLetterGrade(average)})`;
+    document.getElementById('highestGrade').textContent = 
+        `${highest.toFixed(2)}% (${getLetterGrade(highest)})`;
+    document.getElementById('lowestGrade').textContent = 
+        `${lowest.toFixed(2)}% (${getLetterGrade(lowest)})`;
+    document.getElementById('gradeTrend').innerHTML = getTrendHTML(trend);
+    
+    updateHistoryDisplay();
+}
+
+function calculateTrend() {
+    if (gradeHistory.length < 2) return 'stable';
+    
+    const recent = gradeHistory.slice(-3);
+    const grades = recent.map(h => h.totalGrade);
+    
+    if (grades.every((g, i) => i === 0 || g >= grades[i - 1])) return 'up';
+    if (grades.every((g, i) => i === 0 || g <= grades[i - 1])) return 'down';
+    return 'stable';
+}
+
+function getTrendHTML(trend) {
+    const arrows = {
+        up: '<span class="trend-up">↑ Improving</span>',
+        down: '<span class="trend-down">↓ Declining</span>',
+        stable: '<span class="trend-stable">→ Stable</span>'
+    };
+    return arrows[trend] || arrows.stable;
+}
+
+function initializeCategoryManagement() {
+    const categorySummaries = document.getElementById('categorySummaries');
+    
+    // Event delegation for category clicks
+    categorySummaries.addEventListener('click', (e) => {
+        const categoryHeader = e.target.closest('.category-header');
+        if (categoryHeader) {
+            const details = categoryHeader.closest('details');
+            if (details) {
+                // Toggle will happen automatically
+                localStorage.setItem(`category-${details.dataset.category}`, details.open ? 'closed' : 'open');
+            }
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const addAssignmentBtn = document.getElementById('addAssignment');
     const totalGradeSpan = document.getElementById('totalGrade');
     const newScenarioBtn = document.getElementById('newScenario');
-    let assignments = [];
-    let scenarios = [];
-    let gradeHistory = [];
+
+    initializeCategoryManagement();
 
     function createScenario() {
         const modal = document.createElement('div');
@@ -218,16 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
             calculateTotal();
             modal.remove();
         };
-    }
-
-    function calculateTotal(returnOnly = false) {
-        const finalGrade = calculateTotalForAssignments(assignments);
-        
-        if (returnOnly) return finalGrade;
-        
-        const letterGrade = getLetterGrade(finalGrade);
-        totalGradeSpan.textContent = `${finalGrade.toFixed(2)}% (${letterGrade})`;
-        updateGradeColor(finalGrade);
     }
 
     const gradingScales = {
@@ -508,8 +598,6 @@ document.addEventListener('DOMContentLoaded', () => {
         calculateTotal();
     });
 
-    initializeCategoryManagement();
-
     function getRemainingAssignmentsHTML() {
         // Get assignments with no scores
         const remaining = assignments.filter(a => !a.score || a.score === 0);
@@ -696,78 +784,6 @@ document.addEventListener('DOMContentLoaded', () => {
             totalGrade: calculateTotal(true)
         });
         updateAnalytics();
-    }
-
-    // Add this function to calculate statistics
-    function updateAnalytics() {
-        if (!assignments || assignments.length === 0) {
-            console.log('No assignments to analyze');
-            return;
-        }
-
-        // Filter out assignments without scores
-        const completedAssignments = assignments.filter(a => 
-            a.score !== undefined && 
-            a.score !== null && 
-            a.total !== undefined && 
-            a.total !== null &&
-            a.total > 0
-        );
-
-        if (completedAssignments.length === 0) {
-            console.log('No completed assignments to analyze');
-            return;
-        }
-
-        // Calculate assignment grades
-        const grades = completedAssignments.map(a => (a.score / a.total) * 100);
-        
-        // Calculate statistics
-        const average = grades.reduce((a, b) => a + b) / grades.length;
-        const highest = Math.max(...grades);
-        const lowest = Math.min(...grades);
-        
-        // Calculate trend
-        const trend = calculateTrend();
-        
-        console.log('Updating analytics:', {
-            average,
-            highest,
-            lowest,
-            trend,
-            gradesCount: grades.length
-        });
-
-        // Update UI
-        document.getElementById('averageGrade').textContent = 
-            `${average.toFixed(2)}% (${getLetterGrade(average)})`;
-        document.getElementById('highestGrade').textContent = 
-            `${highest.toFixed(2)}% (${getLetterGrade(highest)})`;
-        document.getElementById('lowestGrade').textContent = 
-            `${lowest.toFixed(2)}% (${getLetterGrade(lowest)})`;
-        document.getElementById('gradeTrend').innerHTML = getTrendHTML(trend);
-        
-        updateHistoryDisplay();
-    }
-
-    function calculateTrend() {
-        if (gradeHistory.length < 2) return 'stable';
-        
-        const recent = gradeHistory.slice(-3);
-        const grades = recent.map(h => h.totalGrade);
-        
-        if (grades.every((g, i) => i === 0 || g >= grades[i - 1])) return 'up';
-        if (grades.every((g, i) => i === 0 || g <= grades[i - 1])) return 'down';
-        return 'stable';
-    }
-
-    function getTrendHTML(trend) {
-        const arrows = {
-            up: '<span class="trend-up">↑ Improving</span>',
-            down: '<span class="trend-down">↓ Declining</span>',
-            stable: '<span class="trend-stable">→ Stable</span>'
-        };
-        return arrows[trend] || arrows.stable;
     }
 
     function updateHistoryDisplay() {
