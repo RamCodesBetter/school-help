@@ -208,26 +208,111 @@ function getTrendHTML(trend) {
 
 function initializeCategoryManagement() {
     const categorySummaries = document.getElementById('categorySummaries');
+    const sidebar = document.getElementById('categorySidebar');
     
-    // Add new category button
-    const addCategoryBtn = document.createElement('button');
-    addCategoryBtn.id = 'addCategory';
-    addCategoryBtn.textContent = 'Add Category';
-    addCategoryBtn.className = 'add-category-btn';
-    categorySummaries.parentElement.insertBefore(addCategoryBtn, categorySummaries);
+    // Add manage categories button
+    const manageCategoriesBtn = document.createElement('button');
+    manageCategoriesBtn.textContent = 'Manage Categories';
+    manageCategoriesBtn.className = 'manage-categories-btn';
+    categorySummaries.parentElement.insertBefore(manageCategoriesBtn, categorySummaries);
     
-    addCategoryBtn.addEventListener('click', createCategory);
-    
-    // Existing event delegation code...
-    categorySummaries.addEventListener('click', (e) => {
-        const categoryHeader = e.target.closest('.category-header');
-        if (categoryHeader) {
-            const details = categoryHeader.closest('details');
-            if (details) {
-                localStorage.setItem(`category-${details.dataset.category}`, details.open ? 'closed' : 'open');
-            }
-        }
+    // Sidebar controls
+    manageCategoriesBtn.addEventListener('click', () => {
+        sidebar.classList.add('open');
+        updateCategoryList();
     });
+    
+    document.getElementById('closeSidebar').addEventListener('click', () => {
+        sidebar.classList.remove('open');
+    });
+    
+    // Category CRUD operations
+    document.getElementById('addCategory').addEventListener('click', createCategory);
+}
+
+function updateCategoryList() {
+    const categoryList = document.getElementById('categoryList');
+    categoryList.innerHTML = '';
+    
+    const categories = Array.from(new Set(assignments.map(a => a.category)));
+    
+    categories.forEach(category => {
+        const categoryWeight = assignments.find(a => a.category === category)?.weight || 0;
+        const categoryItem = document.createElement('div');
+        categoryItem.className = 'category-item';
+        categoryItem.innerHTML = `
+            <div class="category-item-header">
+                <span>${category}</span>
+                <div class="category-actions">
+                    <button class="edit-btn" data-category="${category}">Edit</button>
+                    <button class="delete-btn" data-category="${category}">Delete</button>
+                </div>
+            </div>
+            <div class="category-weight">Weight: ${categoryWeight}%</div>
+        `;
+        
+        // Add event listeners for edit and delete
+        categoryItem.querySelector('.edit-btn').addEventListener('click', () => editCategory(category));
+        categoryItem.querySelector('.delete-btn').addEventListener('click', () => deleteCategory(category));
+        
+        categoryList.appendChild(categoryItem);
+    });
+}
+
+function editCategory(categoryName) {
+    const category = assignments.find(a => a.category === categoryName);
+    if (!category) return;
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2>Edit Category</h2>
+            <div class="category-form">
+                <input type="text" id="categoryName" value="${categoryName}" placeholder="Category Name" required>
+                <input type="number" id="categoryWeight" value="${category.weight}" placeholder="Weight (%)" min="0" max="100" required>
+            </div>
+            <div class="modal-buttons">
+                <button id="cancelEdit">Cancel</button>
+                <button id="confirmEdit">Save Changes</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('#cancelEdit').onclick = () => modal.remove();
+    modal.querySelector('#confirmEdit').onclick = () => {
+        const newName = modal.querySelector('#categoryName').value.trim();
+        const newWeight = parseFloat(modal.querySelector('#categoryWeight').value);
+        
+        if (!newName || isNaN(newWeight) || newWeight < 0 || newWeight > 100) {
+            alert('Please enter valid values');
+            return;
+        }
+        
+        // Update all assignments in this category
+        assignments.forEach(a => {
+            if (a.category === categoryName) {
+                a.category = newName;
+                a.weight = newWeight;
+            }
+        });
+        
+        updateCategorySummaries(true);
+        updateCategoryList();
+        modal.remove();
+    };
+}
+
+function deleteCategory(categoryName) {
+    if (!confirm(`Are you sure you want to delete the category "${categoryName}" and all its assignments?`)) {
+        return;
+    }
+    
+    assignments = assignments.filter(a => a.category !== categoryName);
+    updateCategorySummaries(true);
+    updateCategoryList();
 }
 
 function createCategory() {

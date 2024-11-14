@@ -405,7 +405,72 @@ h1, h2, h3 {
 }
 
 .sidebar {
-    display: none;
+    position: fixed;
+    right: -400px;
+    top: 0;
+    width: 400px;
+    height: 100vh;
+    background-color: var(--bg-secondary);
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    transition: right 0.3s ease-out;
+    z-index: 1000;
+    padding: 2rem;
+    border-left: 1px solid var(--border-color);
+}
+
+.sidebar.open {
+    right: 0;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.close-sidebar {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.category-list {
+    margin-top: 2rem;
+}
+
+.category-item {
+    background: var(--bg-primary);
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.category-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.category-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Add button to open sidebar */
+.manage-categories-btn {
+    background-color: var(--accent-primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 1rem;
 }
 
 .category-item {
