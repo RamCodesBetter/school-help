@@ -113,7 +113,6 @@ function updateAnalytics() {
     // Calculate assignment grades
     const grades = completedAssignments.map(a => (a.score / a.total) * 100);
     
-    // Calculate statistics
     const average = grades.reduce((a, b) => a + b) / grades.length;
     const highest = Math.max(...grades);
     const lowest = Math.min(...grades);
