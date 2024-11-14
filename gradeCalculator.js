@@ -209,17 +209,77 @@ function getTrendHTML(trend) {
 function initializeCategoryManagement() {
     const categorySummaries = document.getElementById('categorySummaries');
     
-    // Event delegation for category clicks
+    // Add new category button
+    const addCategoryBtn = document.createElement('button');
+    addCategoryBtn.id = 'addCategory';
+    addCategoryBtn.textContent = 'Add Category';
+    addCategoryBtn.className = 'add-category-btn';
+    categorySummaries.parentElement.insertBefore(addCategoryBtn, categorySummaries);
+    
+    addCategoryBtn.addEventListener('click', createCategory);
+    
+    // Existing event delegation code...
     categorySummaries.addEventListener('click', (e) => {
         const categoryHeader = e.target.closest('.category-header');
         if (categoryHeader) {
             const details = categoryHeader.closest('details');
             if (details) {
-                // Toggle will happen automatically
                 localStorage.setItem(`category-${details.dataset.category}`, details.open ? 'closed' : 'open');
             }
         }
     });
+}
+
+function createCategory() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2>Create New Category</h2>
+            <div class="category-form">
+                <input type="text" id="categoryName" placeholder="Category Name" required>
+                <input type="number" id="categoryWeight" placeholder="Weight (%)" min="0" max="100" required>
+            </div>
+            <div class="modal-buttons">
+                <button id="cancelCategory">Cancel</button>
+                <button id="saveCategory">Create Category</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    const cancelBtn = modal.querySelector('#cancelCategory');
+    const saveBtn = modal.querySelector('#saveCategory');
+    const nameInput = modal.querySelector('#categoryName');
+    const weightInput = modal.querySelector('#categoryWeight');
+    
+    cancelBtn.onclick = () => modal.remove();
+    
+    saveBtn.onclick = () => {
+        const name = nameInput.value.trim();
+        const weight = parseFloat(weightInput.value);
+        
+        if (!name || isNaN(weight) || weight < 0 || weight > 100) {
+            alert('Please enter a valid category name and weight (0-100)');
+            return;
+        }
+        
+        // Create a new empty category
+        const newAssignment = {
+            name: 'New Assignment',
+            score: 0,
+            total: 100,
+            category: name,
+            weight: weight
+        };
+        
+        assignments.push(newAssignment);
+        updateCategorySummaries(true);
+        modal.remove();
+    };
+    
+    nameInput.focus();
 }
 
 // Add this function to global scope (before calculateTotal)
