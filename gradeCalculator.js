@@ -206,6 +206,59 @@ function getTrendHTML(trend) {
     return arrows[trend] || arrows.stable;
 }
 
+function createCategory() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2>Create New Category</h2>
+            <div class="category-form">
+                <input type="text" id="categoryName" placeholder="Category Name" required>
+                <input type="number" id="categoryWeight" placeholder="Weight (%)" min="0" max="100" required>
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="cancelCategory">Cancel</button>
+                <button class="confirm-btn" id="saveCategory">Create Category</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    const cancelBtn = modal.querySelector('#cancelCategory');
+    const saveBtn = modal.querySelector('#saveCategory');
+    const nameInput = modal.querySelector('#categoryName');
+    const weightInput = modal.querySelector('#categoryWeight');
+    
+    cancelBtn.onclick = () => modal.remove();
+    
+    saveBtn.onclick = () => {
+        const name = nameInput.value.trim();
+        const weight = parseFloat(weightInput.value);
+        
+        if (!name || isNaN(weight) || weight < 0 || weight > 100) {
+            alert('Please enter a valid category name and weight (0-100)');
+            return;
+        }
+        
+        // Create a new empty category
+        const newAssignment = {
+            name: 'New Assignment',
+            score: 0,
+            total: 100,
+            category: name,
+            weight: weight
+        };
+        
+        assignments.push(newAssignment);
+        updateCategorySummaries(true);
+        updateCategoryList();
+        modal.remove();
+    };
+    
+    nameInput.focus();
+}
+
 function initializeCategoryManagement() {
     const categorySummaries = document.getElementById('categorySummaries');
     const sidebar = document.getElementById('categorySidebar');
@@ -214,7 +267,6 @@ function initializeCategoryManagement() {
     const manageCategoriesBtn = document.createElement('button');
     manageCategoriesBtn.textContent = 'Manage Categories';
     manageCategoriesBtn.className = 'manage-categories-btn';
-    // Insert before categorySummaries
     categorySummaries.parentElement.insertBefore(manageCategoriesBtn, categorySummaries);
     
     // Sidebar controls
