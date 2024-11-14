@@ -207,148 +207,53 @@ function getTrendHTML(trend) {
 }
 
 function initializeCategoryManagement() {
-    const categorySummaries = document.getElementById('categorySummaries');
     const sidebar = document.getElementById('categorySidebar');
+    const addCategoryBtn = document.getElementById('addCategory');
+    const closeSidebarBtn = document.getElementById('closeSidebar');
     
-    // Add manage categories button
+    // Add manage categories button to main UI
     const manageCategoriesBtn = document.createElement('button');
     manageCategoriesBtn.textContent = 'Manage Categories';
     manageCategoriesBtn.className = 'manage-categories-btn';
-    categorySummaries.parentElement.insertBefore(manageCategoriesBtn, categorySummaries);
+    document.getElementById('categorySummaries').parentElement.insertBefore(manageCategoriesBtn, document.getElementById('categorySummaries'));
     
-    // Sidebar controls
+    // Event Listeners
     manageCategoriesBtn.addEventListener('click', () => {
         sidebar.classList.add('open');
         updateCategoryList();
     });
     
-    document.getElementById('closeSidebar').addEventListener('click', () => {
+    closeSidebarBtn.addEventListener('click', () => {
         sidebar.classList.remove('open');
     });
     
-    // Category CRUD operations
-    document.getElementById('addCategory').addEventListener('click', createCategory);
-}
-
-function updateCategoryList() {
-    const categoryList = document.getElementById('categoryList');
-    categoryList.innerHTML = '';
-    
-    const categories = Array.from(new Set(assignments.map(a => a.category)));
-    
-    categories.forEach(category => {
-        const categoryWeight = assignments.find(a => a.category === category)?.weight || 0;
-        const categoryItem = document.createElement('div');
-        categoryItem.className = 'category-item';
-        categoryItem.innerHTML = `
-            <div class="category-item-header">
-                <span>${category}</span>
-                <div class="category-actions">
-                    <button class="edit-btn" data-category="${category}">Edit</button>
-                    <button class="delete-btn" data-category="${category}">Delete</button>
-                </div>
-            </div>
-            <div class="category-weight">Weight: ${categoryWeight}%</div>
-        `;
-        
-        // Add event listeners for edit and delete
-        categoryItem.querySelector('.edit-btn').addEventListener('click', () => editCategory(category));
-        categoryItem.querySelector('.delete-btn').addEventListener('click', () => deleteCategory(category));
-        
-        categoryList.appendChild(categoryItem);
+    addCategoryBtn.addEventListener('click', () => {
+        const modal = createCategoryModal('Create New Category');
+        document.body.appendChild(modal);
+        setupModalListeners(modal, 'create');
     });
 }
 
-function editCategory(categoryName) {
-    const category = assignments.find(a => a.category === categoryName);
-    if (!category) return;
-    
+function createCategoryModal(title, category = null) {
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.innerHTML = `
         <div class="modal-content">
-            <h2>Edit Category</h2>
+            <h2>${title}</h2>
             <div class="category-form">
-                <input type="text" id="categoryName" value="${categoryName}" placeholder="Category Name" required>
-                <input type="number" id="categoryWeight" value="${category.weight}" placeholder="Weight (%)" min="0" max="100" required>
+                <input type="text" id="categoryName" placeholder="Category Name" value="${category?.category || ''}" required>
+                <input type="number" id="categoryWeight" placeholder="Weight (%)" min="0" max="100" value="${category?.weight || ''}" required>
             </div>
             <div class="modal-buttons">
-                <button id="cancelEdit" class="cancel-btn">Cancel</button>
-                <button id="confirmEdit" class="confirm-btn">Save Changes</button>
+                <button class="cancel-btn" id="cancelCategory">Cancel</button>
+                <button class="confirm-btn" id="saveCategory">Save</button>
             </div>
         </div>
     `;
-    
-    document.body.appendChild(modal);
-    
-    modal.querySelector('#cancelEdit').onclick = () => modal.remove();
-    modal.querySelector('#confirmEdit').onclick = () => {
-        const newName = modal.querySelector('#categoryName').value.trim();
-        const newWeight = parseFloat(modal.querySelector('#categoryWeight').value);
-        
-        if (!newName || isNaN(newWeight) || newWeight < 0 || newWeight > 100) {
-            alert('Please enter valid values');
-            return;
-        }
-        
-        // Update all assignments in this category
-        assignments.forEach(a => {
-            if (a.category === categoryName) {
-                a.category = newName;
-                a.weight = newWeight;
-            }
-        });
-        
-        updateCategorySummaries(true);
-        updateCategoryList();
-        modal.remove();
-    };
+    return modal;
 }
 
-function deleteCategory(categoryName) {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content delete-modal">
-            <h2>Delete Category</h2>
-            <p>Are you sure you want to delete the category "${categoryName}" and all its assignments?</p>
-            <div class="modal-buttons">
-                <button id="cancelDelete" class="cancel-btn">Cancel</button>
-                <button id="confirmDelete" class="confirm-btn">Delete</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    modal.querySelector('#cancelDelete').onclick = () => modal.remove();
-    modal.querySelector('#confirmDelete').onclick = () => {
-        assignments = assignments.filter(a => a.category !== categoryName);
-        updateCategorySummaries(true);
-        updateCategoryList();
-        modal.remove();
-    };
-}
-
-function createCategory() {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <h2>Create New Category</h2>
-            <div class="category-form">
-                <input type="text" id="categoryName" placeholder="Category Name" required>
-                <input type="number" id="categoryWeight" placeholder="Weight (%)" min="0" max="100" required>
-            </div>
-            <div class="modal-buttons">
-                <button id="cancelCategory" class="cancel-btn">Cancel</button>
-                <button id="saveCategory" class="confirm-btn">Create Category</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
+function setupModalListeners(modal, action, originalCategory = null) {
     const cancelBtn = modal.querySelector('#cancelCategory');
     const saveBtn = modal.querySelector('#saveCategory');
     const nameInput = modal.querySelector('#categoryName');
@@ -365,22 +270,89 @@ function createCategory() {
             return;
         }
         
-        // Create a new empty category
-        const newAssignment = {
-            name: 'New Assignment',
-            score: 0,
-            total: 100,
-            category: name,
-            weight: weight
-        };
+        if (action === 'create') {
+            // Create new category
+            const newAssignment = {
+                name: 'New Assignment',
+                score: 0,
+                total: 100,
+                category: name,
+                weight: weight
+            };
+            assignments.push(newAssignment);
+        } else if (action === 'edit') {
+            // Update existing category
+            assignments.forEach(a => {
+                if (a.category === originalCategory) {
+                    a.category = name;
+                    a.weight = weight;
+                }
+            });
+        }
         
-        assignments.push(newAssignment);
         updateCategorySummaries(true);
         updateCategoryList();
         modal.remove();
     };
     
     nameInput.focus();
+}
+
+function updateCategoryList() {
+    const categoryList = document.getElementById('categoryList');
+    categoryList.innerHTML = '';
+    
+    const categories = Array.from(new Set(assignments.map(a => a.category)));
+    
+    categories.forEach(category => {
+        const categoryWeight = assignments.find(a => a.category === category)?.weight || 0;
+        const categoryItem = document.createElement('div');
+        categoryItem.className = 'category-item';
+        categoryItem.innerHTML = `
+            <div class="category-item-header">
+                <span>${category}</span>
+                <div class="category-actions">
+                    <button class="edit-btn">Edit</button>
+                    <button class="delete-btn">Delete</button>
+                </div>
+            </div>
+            <div class="category-weight">Weight: ${categoryWeight}%</div>
+        `;
+        
+        // Add event listeners
+        categoryItem.querySelector('.edit-btn').addEventListener('click', () => {
+            const modal = createCategoryModal('Edit Category', { category, weight: categoryWeight });
+            document.body.appendChild(modal);
+            setupModalListeners(modal, 'edit', category);
+        });
+        
+        categoryItem.querySelector('.delete-btn').addEventListener('click', () => {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content delete-modal">
+                    <h2>Delete Category</h2>
+                    <p>Are you sure you want to delete the category "${category}" and all its assignments?</p>
+                    <div class="modal-buttons">
+                        <button class="cancel-btn" id="cancelDelete">Cancel</button>
+                        <button class="confirm-btn" id="confirmDelete">Delete</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            modal.querySelector('#cancelDelete').onclick = () => modal.remove();
+            modal.querySelector('#confirmDelete').onclick = () => {
+                assignments = assignments.filter(a => a.category !== category);
+                updateCategorySummaries(true);
+                updateCategoryList();
+                modal.remove();
+            };
+        });
+        
+        categoryList.appendChild(categoryItem);
+    });
 }
 
 // Add this function to global scope (before calculateTotal)
