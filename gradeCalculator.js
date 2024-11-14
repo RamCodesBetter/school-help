@@ -273,8 +273,8 @@ function editCategory(categoryName) {
                 <input type="number" id="categoryWeight" value="${category.weight}" placeholder="Weight (%)" min="0" max="100" required>
             </div>
             <div class="modal-buttons">
-                <button id="cancelEdit">Cancel</button>
-                <button id="confirmEdit">Save Changes</button>
+                <button id="cancelEdit" class="cancel-btn">Cancel</button>
+                <button id="confirmEdit" class="confirm-btn">Save Changes</button>
             </div>
         </div>
     `;
@@ -306,13 +306,28 @@ function editCategory(categoryName) {
 }
 
 function deleteCategory(categoryName) {
-    if (!confirm(`Are you sure you want to delete the category "${categoryName}" and all its assignments?`)) {
-        return;
-    }
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content delete-modal">
+            <h2>Delete Category</h2>
+            <p>Are you sure you want to delete the category "${categoryName}" and all its assignments?</p>
+            <div class="modal-buttons">
+                <button id="cancelDelete" class="cancel-btn">Cancel</button>
+                <button id="confirmDelete" class="confirm-btn">Delete</button>
+            </div>
+        </div>
+    `;
     
-    assignments = assignments.filter(a => a.category !== categoryName);
-    updateCategorySummaries(true);
-    updateCategoryList();
+    document.body.appendChild(modal);
+    
+    modal.querySelector('#cancelDelete').onclick = () => modal.remove();
+    modal.querySelector('#confirmDelete').onclick = () => {
+        assignments = assignments.filter(a => a.category !== categoryName);
+        updateCategorySummaries(true);
+        updateCategoryList();
+        modal.remove();
+    };
 }
 
 function createCategory() {
@@ -326,8 +341,8 @@ function createCategory() {
                 <input type="number" id="categoryWeight" placeholder="Weight (%)" min="0" max="100" required>
             </div>
             <div class="modal-buttons">
-                <button id="cancelCategory">Cancel</button>
-                <button id="saveCategory">Create Category</button>
+                <button id="cancelCategory" class="cancel-btn">Cancel</button>
+                <button id="saveCategory" class="confirm-btn">Create Category</button>
             </div>
         </div>
     `;
@@ -361,6 +376,7 @@ function createCategory() {
         
         assignments.push(newAssignment);
         updateCategorySummaries(true);
+        updateCategoryList();
         modal.remove();
     };
     
