@@ -488,13 +488,21 @@ h1, h2, h3 {
 
 /* Add button to open sidebar */
 .manage-categories-btn {
+    display: block;
+    width: 100%;
     background-color: var(--accent-primary);
     color: white;
     border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
+    padding: 0.75rem;
+    border-radius: 6px;
     cursor: pointer;
     margin-bottom: 1rem;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+}
+
+.manage-categories-btn:hover {
+    background-color: var(--accent-secondary);
 }
 
 .category-item {

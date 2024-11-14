@@ -207,22 +207,28 @@ function getTrendHTML(trend) {
 }
 
 function initializeCategoryManagement() {
-    const categoryList = document.getElementById('categoryList');
+    const categorySummaries = document.getElementById('categorySummaries');
+    const sidebar = document.getElementById('categorySidebar');
     
-    // Event delegation for the category list
-    categoryList.addEventListener('click', (e) => {
-        const target = e.target;
-        const categoryItem = target.closest('.category-item');
-        if (!categoryItem) return;
-        
-        const categoryName = categoryItem.querySelector('span').textContent;
-        
-        if (target.classList.contains('edit-btn')) {
-            editCategory(categoryName);
-        } else if (target.classList.contains('delete-btn')) {
-            deleteCategory(categoryName);
-        }
+    // Create and add the manage categories button
+    const manageCategoriesBtn = document.createElement('button');
+    manageCategoriesBtn.textContent = 'Manage Categories';
+    manageCategoriesBtn.className = 'manage-categories-btn';
+    // Insert before categorySummaries
+    categorySummaries.parentElement.insertBefore(manageCategoriesBtn, categorySummaries);
+    
+    // Sidebar controls
+    manageCategoriesBtn.addEventListener('click', () => {
+        sidebar.classList.add('open');
+        updateCategoryList();
     });
+    
+    document.getElementById('closeSidebar').addEventListener('click', () => {
+        sidebar.classList.remove('open');
+    });
+    
+    // Add Category button
+    document.getElementById('addCategory').addEventListener('click', createCategory);
 }
 
 function editCategory(categoryName) {
