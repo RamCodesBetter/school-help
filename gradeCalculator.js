@@ -207,53 +207,46 @@ function getTrendHTML(trend) {
 }
 
 function initializeCategoryManagement() {
-    const sidebar = document.getElementById('categorySidebar');
-    const addCategoryBtn = document.getElementById('addCategory');
-    const closeSidebarBtn = document.getElementById('closeSidebar');
+    const categoryList = document.getElementById('categoryList');
     
-    // Add manage categories button to main UI
-    const manageCategoriesBtn = document.createElement('button');
-    manageCategoriesBtn.textContent = 'Manage Categories';
-    manageCategoriesBtn.className = 'manage-categories-btn';
-    document.getElementById('categorySummaries').parentElement.insertBefore(manageCategoriesBtn, document.getElementById('categorySummaries'));
-    
-    // Event Listeners
-    manageCategoriesBtn.addEventListener('click', () => {
-        sidebar.classList.add('open');
-        updateCategoryList();
-    });
-    
-    closeSidebarBtn.addEventListener('click', () => {
-        sidebar.classList.remove('open');
-    });
-    
-    addCategoryBtn.addEventListener('click', () => {
-        const modal = createCategoryModal('Create New Category');
-        document.body.appendChild(modal);
-        setupModalListeners(modal, 'create');
+    // Event delegation for the category list
+    categoryList.addEventListener('click', (e) => {
+        const target = e.target;
+        const categoryItem = target.closest('.category-item');
+        if (!categoryItem) return;
+        
+        const categoryName = categoryItem.querySelector('span').textContent;
+        
+        if (target.classList.contains('edit-btn')) {
+            editCategory(categoryName);
+        } else if (target.classList.contains('delete-btn')) {
+            deleteCategory(categoryName);
+        }
     });
 }
 
-function createCategoryModal(title, category = null) {
+function editCategory(categoryName) {
+    const category = assignments.find(a => a.category === categoryName);
+    if (!category) return;
+    
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.innerHTML = `
         <div class="modal-content">
-            <h2>${title}</h2>
+            <h2>Edit Category</h2>
             <div class="category-form">
-                <input type="text" id="categoryName" placeholder="Category Name" value="${category?.category || ''}" required>
-                <input type="number" id="categoryWeight" placeholder="Weight (%)" min="0" max="100" value="${category?.weight || ''}" required>
+                <input type="text" id="categoryName" value="${categoryName}" placeholder="Category Name" required>
+                <input type="number" id="categoryWeight" value="${category.weight}" placeholder="Weight (%)" min="0" max="100" required>
             </div>
             <div class="modal-buttons">
                 <button class="cancel-btn" id="cancelCategory">Cancel</button>
-                <button class="confirm-btn" id="saveCategory">Save</button>
+                <button class="confirm-btn" id="saveCategory">Save Changes</button>
             </div>
         </div>
     `;
-    return modal;
-}
-
-function setupModalListeners(modal, action, originalCategory = null) {
+    
+    document.body.appendChild(modal);
+    
     const cancelBtn = modal.querySelector('#cancelCategory');
     const saveBtn = modal.querySelector('#saveCategory');
     const nameInput = modal.querySelector('#categoryName');
@@ -262,40 +255,51 @@ function setupModalListeners(modal, action, originalCategory = null) {
     cancelBtn.onclick = () => modal.remove();
     
     saveBtn.onclick = () => {
-        const name = nameInput.value.trim();
-        const weight = parseFloat(weightInput.value);
+        const newName = nameInput.value.trim();
+        const newWeight = parseFloat(weightInput.value);
         
-        if (!name || isNaN(weight) || weight < 0 || weight > 100) {
-            alert('Please enter a valid category name and weight (0-100)');
+        if (!newName || isNaN(newWeight) || newWeight < 0 || newWeight > 100) {
+            alert('Please enter valid values');
             return;
         }
         
-        if (action === 'create') {
-            // Create new category
-            const newAssignment = {
-                name: 'New Assignment',
-                score: 0,
-                total: 100,
-                category: name,
-                weight: weight
-            };
-            assignments.push(newAssignment);
-        } else if (action === 'edit') {
-            // Update existing category
-            assignments.forEach(a => {
-                if (a.category === originalCategory) {
-                    a.category = name;
-                    a.weight = weight;
-                }
-            });
-        }
+        // Update all assignments in this category
+        assignments.forEach(a => {
+            if (a.category === categoryName) {
+                a.category = newName;
+                a.weight = newWeight;
+            }
+        });
         
         updateCategorySummaries(true);
         updateCategoryList();
         modal.remove();
     };
+}
+
+function deleteCategory(categoryName) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content delete-modal">
+            <h2>Delete Category</h2>
+            <p>Are you sure you want to delete the category "${categoryName}" and all its assignments?</p>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="cancelDelete">Cancel</button>
+                <button class="confirm-btn" id="confirmDelete">Delete</button>
+            </div>
+        </div>
+    `;
     
-    nameInput.focus();
+    document.body.appendChild(modal);
+    
+    modal.querySelector('#cancelDelete').onclick = () => modal.remove();
+    modal.querySelector('#confirmDelete').onclick = () => {
+        assignments = assignments.filter(a => a.category !== categoryName);
+        updateCategorySummaries(true);
+        updateCategoryList();
+        modal.remove();
+    };
 }
 
 function updateCategoryList() {
@@ -318,38 +322,6 @@ function updateCategoryList() {
             </div>
             <div class="category-weight">Weight: ${categoryWeight}%</div>
         `;
-        
-        // Add event listeners
-        categoryItem.querySelector('.edit-btn').addEventListener('click', () => {
-            const modal = createCategoryModal('Edit Category', { category, weight: categoryWeight });
-            document.body.appendChild(modal);
-            setupModalListeners(modal, 'edit', category);
-        });
-        
-        categoryItem.querySelector('.delete-btn').addEventListener('click', () => {
-            const modal = document.createElement('div');
-            modal.className = 'modal';
-            modal.innerHTML = `
-                <div class="modal-content delete-modal">
-                    <h2>Delete Category</h2>
-                    <p>Are you sure you want to delete the category "${category}" and all its assignments?</p>
-                    <div class="modal-buttons">
-                        <button class="cancel-btn" id="cancelDelete">Cancel</button>
-                        <button class="confirm-btn" id="confirmDelete">Delete</button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            modal.querySelector('#cancelDelete').onclick = () => modal.remove();
-            modal.querySelector('#confirmDelete').onclick = () => {
-                assignments = assignments.filter(a => a.category !== category);
-                updateCategorySummaries(true);
-                updateCategoryList();
-                modal.remove();
-            };
-        });
         
         categoryList.appendChild(categoryItem);
     });
