@@ -225,38 +225,31 @@ function createCategory() {
     
     document.body.appendChild(modal);
     
-    const cancelBtn = modal.querySelector('#cancelCategory');
-    const saveBtn = modal.querySelector('#saveCategory');
-    const nameInput = modal.querySelector('#categoryName');
-    const weightInput = modal.querySelector('#categoryWeight');
-    
-    cancelBtn.onclick = () => modal.remove();
-    
-    saveBtn.onclick = () => {
-        const name = nameInput.value.trim();
-        const weight = parseFloat(weightInput.value);
+    modal.querySelector('#cancelCategory').addEventListener('click', () => modal.remove());
+    modal.querySelector('#saveCategory').addEventListener('click', () => {
+        const name = modal.querySelector('#categoryName').value.trim();
+        const weight = parseFloat(modal.querySelector('#categoryWeight').value);
         
         if (!name || isNaN(weight) || weight < 0 || weight > 100) {
             alert('Please enter a valid category name and weight (0-100)');
             return;
         }
         
-        // Create a new empty category
-        const newAssignment = {
+        // Create a new category with a sample assignment
+        assignments.push({
             name: 'New Assignment',
             score: 0,
             total: 100,
             category: name,
             weight: weight
-        };
+        });
         
-        assignments.push(newAssignment);
         updateCategorySummaries(true);
         updateCategoryList();
         modal.remove();
-    };
+    });
     
-    nameInput.focus();
+    modal.querySelector('#categoryName').focus();
 }
 
 function initializeCategoryManagement() {
@@ -284,8 +277,10 @@ function initializeCategoryManagement() {
 }
 
 function editCategory(categoryName) {
-    const category = assignments.find(a => a.category === categoryName);
-    if (!category) return;
+    const categoryAssignments = assignments.filter(a => a.category === categoryName);
+    if (!categoryAssignments.length) return;
+    
+    const weight = categoryAssignments[0].weight;
     
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -294,7 +289,7 @@ function editCategory(categoryName) {
             <h2>Edit Category</h2>
             <div class="category-form">
                 <input type="text" id="categoryName" value="${categoryName}" placeholder="Category Name" required>
-                <input type="number" id="categoryWeight" value="${category.weight}" placeholder="Weight (%)" min="0" max="100" required>
+                <input type="number" id="categoryWeight" value="${weight}" placeholder="Weight (%)" min="0" max="100" required>
             </div>
             <div class="modal-buttons">
                 <button class="cancel-btn" id="cancelCategory">Cancel</button>
@@ -305,16 +300,10 @@ function editCategory(categoryName) {
     
     document.body.appendChild(modal);
     
-    const cancelBtn = modal.querySelector('#cancelCategory');
-    const saveBtn = modal.querySelector('#saveCategory');
-    const nameInput = modal.querySelector('#categoryName');
-    const weightInput = modal.querySelector('#categoryWeight');
-    
-    cancelBtn.onclick = () => modal.remove();
-    
-    saveBtn.onclick = () => {
-        const newName = nameInput.value.trim();
-        const newWeight = parseFloat(weightInput.value);
+    modal.querySelector('#cancelCategory').addEventListener('click', () => modal.remove());
+    modal.querySelector('#saveCategory').addEventListener('click', () => {
+        const newName = modal.querySelector('#categoryName').value.trim();
+        const newWeight = parseFloat(modal.querySelector('#categoryWeight').value);
         
         if (!newName || isNaN(newWeight) || newWeight < 0 || newWeight > 100) {
             alert('Please enter valid values');
@@ -332,7 +321,7 @@ function editCategory(categoryName) {
         updateCategorySummaries(true);
         updateCategoryList();
         modal.remove();
-    };
+    });
 }
 
 function deleteCategory(categoryName) {
@@ -364,10 +353,15 @@ function updateCategoryList() {
     const categoryList = document.getElementById('categoryList');
     categoryList.innerHTML = '';
     
-    const categories = Array.from(new Set(assignments.map(a => a.category)));
+    // Get unique categories and their weights
+    const categories = {};
+    assignments.forEach(a => {
+        if (!categories[a.category]) {
+            categories[a.category] = a.weight;
+        }
+    });
     
-    categories.forEach(category => {
-        const categoryWeight = assignments.find(a => a.category === category)?.weight || 0;
+    Object.entries(categories).forEach(([category, weight]) => {
         const categoryItem = document.createElement('div');
         categoryItem.className = 'category-item';
         categoryItem.innerHTML = `
@@ -378,8 +372,12 @@ function updateCategoryList() {
                     <button class="delete-btn">Delete</button>
                 </div>
             </div>
-            <div class="category-weight">Weight: ${categoryWeight}%</div>
+            <div class="category-weight">Weight: ${weight}%</div>
         `;
+        
+        // Add event listeners for edit and delete buttons
+        categoryItem.querySelector('.edit-btn').addEventListener('click', () => editCategory(category));
+        categoryItem.querySelector('.delete-btn').addEventListener('click', () => deleteCategory(category));
         
         categoryList.appendChild(categoryItem);
     });

@@ -850,3 +850,57 @@ h1, h2, h3 {
     border-radius: 4px;
     font-size: 1rem;
 }
+
+/* Update button styles to be consistent */
+.manage-categories-btn, #addAssignment {
+    display: block;
+    width: 100%;
+    background-color: var(--accent-primary);
+    color: white;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    transition: background-color 0.2s;
+}
+
+.manage-categories-btn:hover, #addAssignment:hover {
+    background-color: var(--accent-secondary);
+}
+
+/* Add styles for category items in sidebar */
+.category-item {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.category-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.category-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.category-actions button {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.edit-btn {
+    background-color: var(--accent-primary);
+}
+
+.delete-btn {
+    background-color: #dc3545;
+}
