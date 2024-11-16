@@ -206,6 +206,76 @@ function getTrendHTML(trend) {
     return arrows[trend] || arrows.stable;
 }
 
+function createCategory() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2>Create New Category</h2>
+            <div class="category-form">
+                <input type="text" id="categoryName" placeholder="Category Name" required>
+                <input type="number" id="categoryWeight" placeholder="Weight (%)" min="0" max="100" required>
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="cancelCategory">Cancel</button>
+                <button class="confirm-btn" id="saveCategory">Create Category</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('#cancelCategory').addEventListener('click', () => modal.remove());
+    modal.querySelector('#saveCategory').addEventListener('click', () => {
+        const name = modal.querySelector('#categoryName').value.trim();
+        const weight = parseFloat(modal.querySelector('#categoryWeight').value);
+        
+        if (!name || isNaN(weight) || weight < 0 || weight > 100) {
+            alert('Please enter a valid category name and weight (0-100)');
+            return;
+        }
+        
+        // Create a new category with a sample assignment
+        assignments.push({
+            name: 'New Assignment',
+            score: 0,
+            total: 100,
+            category: name,
+            weight: weight
+        });
+        
+        updateCategorySummaries(true);
+        updateCategoryList();
+        modal.remove();
+    });
+    
+    modal.querySelector('#categoryName').focus();
+}
+
+function initializeCategoryManagement() {
+    const categorySummaries = document.getElementById('categorySummaries');
+    const sidebar = document.getElementById('categorySidebar');
+    
+    // Create and add the manage categories button
+    const manageCategoriesBtn = document.createElement('button');
+    manageCategoriesBtn.textContent = 'Manage Categories';
+    manageCategoriesBtn.className = 'manage-categories-btn';
+    categorySummaries.parentElement.insertBefore(manageCategoriesBtn, categorySummaries);
+    
+    // Sidebar controls
+    manageCategoriesBtn.addEventListener('click', () => {
+        sidebar.classList.add('open');
+        updateCategoryList();
+    });
+    
+    document.getElementById('closeSidebar').addEventListener('click', () => {
+        sidebar.classList.remove('open');
+    });
+    
+    // Add Category button
+    document.getElementById('addCategory').addEventListener('click', createCategory);
+}
+
 function editCategory(categoryName) {
     const categoryAssignments = assignments.filter(a => a.category === categoryName);
     if (!categoryAssignments.length) return;
@@ -441,79 +511,111 @@ function trackGradeChange(assignment, oldScore, newScore) {
     updateAnalytics();
 }
 
-function initializeEventListeners() {
-    // Initialize category management
-    const sidebar = document.getElementById('categorySidebar');
-    const categorySummaries = document.getElementById('categorySummaries');
-    
-    // Create and add the manage categories button
-    const manageCategoriesBtn = document.createElement('button');
-    manageCategoriesBtn.textContent = 'Manage Categories';
-    manageCategoriesBtn.className = 'manage-categories-btn';
-    categorySummaries.parentElement.insertBefore(manageCategoriesBtn, categorySummaries);
-    
-    // Category management event listeners
-    manageCategoriesBtn.addEventListener('click', () => {
-        sidebar.classList.add('open');
-        updateCategoryList();
-    });
-    
-    document.getElementById('closeSidebar').addEventListener('click', () => {
-        sidebar.classList.remove('open');
-    });
-    
-    document.getElementById('addCategory').addEventListener('click', () => {
+document.addEventListener('DOMContentLoaded', () => {
+    const addAssignmentBtn = document.getElementById('addAssignment');
+    const totalGradeSpan = document.getElementById('totalGrade');
+    const newScenarioBtn = document.getElementById('newScenario');
+
+    initializeCategoryManagement();
+
+    function createScenario() {
         const modal = document.createElement('div');
         modal.className = 'modal';
         modal.innerHTML = `
             <div class="modal-content">
-                <h2>Create New Category</h2>
-                <div class="category-form">
-                    <input type="text" id="categoryName" placeholder="Category Name" required>
-                    <input type="number" id="categoryWeight" placeholder="Weight (%)" min="0" max="100" required>
+                <h2>Create New Scenario</h2>
+                <div class="scenario-form">
+                    <input type="text" id="scenarioName" placeholder="Scenario Name">
+                    <div class="remaining-assignments">
+                        ${getRemainingAssignmentsHTML()}
+                    </div>
                 </div>
                 <div class="modal-buttons">
-                    <button class="cancel-btn" id="cancelCategory">Cancel</button>
-                    <button class="confirm-btn" id="saveCategory">Create Category</button>
+                    <button id="cancelScenario">Cancel</button>
+                    <button id="saveScenario">Save Scenario</button>
                 </div>
             </div>
         `;
-        
-        document.body.appendChild(modal);
-        
-        modal.querySelector('#cancelCategory').addEventListener('click', () => modal.remove());
-        modal.querySelector('#saveCategory').addEventListener('click', () => {
-            const name = modal.querySelector('#categoryName').value.trim();
-            const weight = parseFloat(modal.querySelector('#categoryWeight').value);
-            
-            if (!name || isNaN(weight) || weight < 0 || weight > 100) {
-                alert('Please enter a valid category name and weight (0-100)');
-                return;
-            }
-            
-            assignments.push({
-                name: 'New Assignment',
-                score: 0,
-                total: 100,
-                category: name,
-                weight: weight
-            });
-            
-            updateCategorySummaries(true);
-            updateCategoryList();
-            modal.remove();
-        });
-    });
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize all event listeners
-    initializeEventListeners();
-    
-    // Initialize grade chart
-    initializeGradeChart();
-    
-    // Initialize other existing functionality
+        document.body.appendChild(modal);
+        setupScenarioListeners(modal);
+    }
+
+    newScenarioBtn.addEventListener('click', createScenario);
+
+    const themeToggle = document.getElementById('themeToggle');
+    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+    // Set initial theme
+    document.documentElement.setAttribute('data-theme', 
+        localStorage.getItem('theme') || 'light'
+    );
+
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        
+        // Update icon
+        themeToggle.querySelector('.theme-icon').textContent = 
+        document.documentElement.getAttribute('data-theme') === 'light' ? '🌙' : '☀️';
+    });
+
+    function parseCanvasGrades(text) {
+        const rows = text.trim().split('\n');
+        const assignments = [];
+        let currentCategory = '';
+        let currentWeight = 0;
+        let currentAssignmentName = '';
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i].trim();
+            
+            // Check for category headers and their weights
+            if (row.match(/^\s*[A-Za-z\s]+$/)) {
+                const nextRow = rows[i + 1]?.trim() || '';
+                const weightMatch = nextRow.match(/(\d+)%\s+of\s+Total/);
+                if (weightMatch) {
+                    currentCategory = row.trim();
+                    currentWeight = parseFloat(weightMatch[1]);
+                    continue;
+                }
+            }
+
+            // Look for assignment names
+            if (row.startsWith('Assignment')) {
+                currentAssignmentName = rows[i + 1]?.trim() || '';
+                continue;
+            }
+
+            // Match score patterns
+            const scoreMatch = row.match(/(\d+(?:\.\d+)?)\/(\d+)\s+pts/) || 
+                              row.match(/Score:\s*(\d+(?:\.\d+)?)\s+out of\s*(\d+)\s+points/);
+            
+            if (scoreMatch && currentAssignmentName) {
+                // Only add if we have a valid name and it's not a duplicate
+                if (currentAssignmentName && 
+                    !currentAssignmentName.includes('Search') && 
+                    !currentAssignmentName.includes('Skip To Content') &&
+                    !assignments.some(a => a.name === currentAssignmentName)) {
+                    
+                    assignments.push({
+                        name: currentAssignmentName,
+                        score: parseFloat(scoreMatch[1]),
+                        total: parseFloat(scoreMatch[2]),
+                        weight: currentWeight,
+                        category: currentCategory
+                    });
+                }
+                currentAssignmentName = ''; // Reset the name after using it
+            }
+        }
+        
+        return assignments;
+    }
+
     document.getElementById('processPaste').addEventListener('click', async () => {
         const button = document.getElementById('processPaste');
         const textarea = document.getElementById('canvasPaste');
@@ -567,638 +669,584 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 1500);
         }
     });
-    
-    document.getElementById('gradingScale').addEventListener('change', () => {
-        calculateTotal();
-    });
-    
-    // ... other existing initialization code ...
-});
 
-function parseCanvasGrades(text) {
-    const rows = text.trim().split('\n');
-    const assignments = [];
-    let currentCategory = '';
-    let currentWeight = 0;
-    let currentAssignmentName = '';
-    
-    for (let i = 0; i < rows.length; i++) {
-        const row = rows[i].trim();
+    function createAssignmentRow(assignment) {
+        const row = document.createElement('div');
+        row.className = 'assignment-row';
         
-        // Check for category headers and their weights
-        if (row.match(/^\s*[A-Za-z\s]+$/)) {
-            const nextRow = rows[i + 1]?.trim() || '';
-            const weightMatch = nextRow.match(/(\d+)%\s+of\s+Total/);
-            if (weightMatch) {
-                currentCategory = row.trim();
-                currentWeight = parseFloat(weightMatch[1]);
-                continue;
-            }
-        }
+        row.innerHTML = `
+            <input type="text" value="${assignment.name}" class="assignment-name" readonly>
+            <input type="number" value="${assignment.score}" class="score" min="0" max="100">
+            <input type="number" value="${assignment.total}" class="total-points" min="0">
+            <input type="number" value="${assignment.weight}" class="weight" min="0" max="100">
+            <button class="edit-btn">Edit</button>
+            <button class="delete-btn">×</button>
+        `;
 
-        // Look for assignment names
-        if (row.startsWith('Assignment')) {
-            currentAssignmentName = rows[i + 1]?.trim() || '';
-            continue;
-        }
-
-        // Match score patterns
-        const scoreMatch = row.match(/(\d+(?:\.\d+)?)\/(\d+)\s+pts/) || 
-                          row.match(/Score:\s*(\d+(?:\.\d+)?)\s+out of\s*(\d+)\s+points/);
-        
-        if (scoreMatch && currentAssignmentName) {
-            // Only add if we have a valid name and it's not a duplicate
-            if (currentAssignmentName && 
-                !currentAssignmentName.includes('Search') && 
-                !currentAssignmentName.includes('Skip To Content') &&
-                !assignments.some(a => a.name === currentAssignmentName)) {
-                
-                assignments.push({
-                    name: currentAssignmentName,
-                    score: parseFloat(scoreMatch[1]),
-                    total: parseFloat(scoreMatch[2]),
-                    weight: currentWeight,
-                    category: currentCategory
-                });
+        row.querySelector('.delete-btn').addEventListener('click', () => {
+            const index = assignments.indexOf(assignment);
+            if (index > -1) {
+                assignments.splice(index, 1); // Remove from assignments array
             }
-            currentAssignmentName = ''; // Reset the name after using it
-        }
+            row.remove();
+            calculateTotal();
+        });
+
+        row.querySelector('.edit-btn').addEventListener('click', () => {
+            openEditModal(assignment, row);
+        });
+
+        return row;
     }
-    
-    return assignments;
-}
 
-function createAssignmentRow(assignment) {
-    const row = document.createElement('div');
-    row.className = 'assignment-row';
-    
-    row.innerHTML = `
-        <input type="text" value="${assignment.name}" class="assignment-name" readonly>
-        <input type="number" value="${assignment.score}" class="score" min="0" max="100">
-        <input type="number" value="${assignment.total}" class="total-points" min="0">
-        <input type="number" value="${assignment.weight}" class="weight" min="0" max="100">
-        <button class="edit-btn">Edit</button>
-        <button class="delete-btn">×</button>
-    `;
-
-    row.querySelector('.delete-btn').addEventListener('click', () => {
-        const index = assignments.indexOf(assignment);
-        if (index > -1) {
-            assignments.splice(index, 1); // Remove from assignments array
-        }
-        row.remove();
-        calculateTotal();
-    });
-
-    row.querySelector('.edit-btn').addEventListener('click', () => {
-        openEditModal(assignment, row);
-    });
-
-    return row;
-}
-
-function openEditModal(assignment, row) {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <h2>Edit Assignment</h2>
-            <input type="text" id="editName" value="${assignment.name}">
-            <input type="number" id="editScore" value="${assignment.score}" min="0" max="100">
-            <input type="number" id="editTotal" value="${assignment.total}" min="0">
-            <input type="number" id="editWeight" value="${assignment.weight}" min="0" max="100">
-            <div class="modal-buttons">
-                <button id="cancelEdit">Cancel</button>
-                <button id="confirmEdit">Save</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-
-    modal.querySelector('#cancelEdit').onclick = () => modal.remove();
-    modal.querySelector('#confirmEdit').onclick = () => {
-        assignment.name = modal.querySelector('#editName').value;
-        assignment.score = parseFloat(modal.querySelector('#editScore').value);
-        assignment.total = parseFloat(modal.querySelector('#editTotal').value);
-        assignment.weight = parseFloat(modal.querySelector('#editWeight').value);
-        row.querySelector('.assignment-name').value = assignment.name; // Update row
-        row.querySelector('.score').value = assignment.score; // Update row
-        row.querySelector('.total-points').value = assignment.total; // Update row
-        row.querySelector('.weight').value = assignment.weight; // Update row
-        calculateTotal();
-        modal.remove();
-    };
-}
-
-function updateCategorySummaries(maintainState = false) {
-    const container = document.getElementById('categorySummaries');
-    const expandedCategories = maintainState ? 
-        Array.from(container.querySelectorAll('details[open]')).map(el => el.dataset.category) : [];
-    
-    container.innerHTML = '';
-
-    const uniqueCategories = [...new Set(assignments.map(a => a.category))];
-
-    uniqueCategories.forEach(category => {
-        const categoryAssignments = assignments.filter(a => a.category === category);
-        const categoryData = {
-            totalScore: categoryAssignments.reduce((sum, a) => sum + a.score, 0),
-            totalPoints: categoryAssignments.reduce((sum, a) => sum + a.total, 0),
-            weight: categoryAssignments[0]?.weight || 0
-        };
-
-        const percentage = (categoryData.totalScore / categoryData.totalPoints) * 100;
-        const letterGrade = getLetterGrade(percentage);
-
-        const categoryDiv = document.createElement('details');
-        categoryDiv.className = 'category-summary';
-        categoryDiv.dataset.category = category;
-        
-        if (maintainState && expandedCategories.includes(category)) {
-            categoryDiv.open = true;
-        }
-        
-        categoryDiv.innerHTML = `
-            <summary class="category-header">
-                <div class="category-info">
-                    <span class="category-name">${category}</span>
-                    <span class="category-grade">${percentage.toFixed(2)}% (${letterGrade})</span>
-                </div>
-            </summary>
-            <div class="category-details">
-                <p>Weight: ${categoryData.weight}%</p>
-                <p>Points: ${categoryData.totalScore}/${categoryData.totalPoints}</p>
-                <div class="category-assignments" data-category="${category}">
-                    ${categoryAssignments.map(assignment => {
-                        const assignmentPercentage = (assignment.score / assignment.total) * 100;
-                        const assignmentLetterGrade = getLetterGrade(assignmentPercentage);
-                        return `
-                            <div class="assignment-detail" draggable="true" data-name="${assignment.name}" data-category="${category}">
-                                <span class="assignment-name">${assignment.name}</span>
-                                <div class="assignment-scores">
-                                    <span>${assignment.score}/${assignment.total}</span>
-                                    <span>(${assignmentPercentage.toFixed(2)}%)</span>
-                                    <span>${assignmentLetterGrade}</span>
-                                    <button class="edit-btn" onclick="editAssignment('${assignment.name}')">Edit</button>
-                                    <button class="delete-btn" onclick="removeAssignment('${assignment.name}')">×</button>
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
+    function openEditModal(assignment, row) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Edit Assignment</h2>
+                <input type="text" id="editName" value="${assignment.name}">
+                <input type="number" id="editScore" value="${assignment.score}" min="0" max="100">
+                <input type="number" id="editTotal" value="${assignment.total}" min="0">
+                <input type="number" id="editWeight" value="${assignment.weight}" min="0" max="100">
+                <div class="modal-buttons">
+                    <button id="cancelEdit">Cancel</button>
+                    <button id="confirmEdit">Save</button>
                 </div>
             </div>
         `;
-        
-        container.appendChild(categoryDiv);
-    });
+        document.body.appendChild(modal);
 
-    // Add drag and drop listeners
-    document.querySelectorAll('.assignment-detail').forEach(assignment => {
-        assignment.addEventListener('dragstart', (e) => {
-            e.stopPropagation();
-            e.target.classList.add('dragging');
-            e.dataTransfer.setData('text/plain', e.target.dataset.name);
-        });
-
-        assignment.addEventListener('dragend', (e) => {
-            e.target.classList.remove('dragging');
-        });
-    });
-
-    // Add drop zones to existing category sections
-    document.querySelectorAll('.category-assignments').forEach(dropZone => {
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
-
-        dropZone.addEventListener('dragleave', (e) => {
-            dropZone.classList.remove('drag-over');
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            
-            const assignmentName = e.dataTransfer.getData('text/plain');
-            const newCategory = dropZone.dataset.category;
-            
-            // Find the assignment and update its category
-            const assignment = assignments.find(a => a.name === assignmentName);
-            if (assignment && assignment.category !== newCategory) {
-                // Update only the category, keep other properties unchanged
-                assignment.category = newCategory;
-                
-                // Update the UI without creating new categories
-                calculateTotal();
-                updateCategorySummaries();
-            }
-        });
-    });
-
-    initializeDragAndDrop();
-
-    // Restore expanded state
-    if (maintainState) {
-        expandedCategories.forEach(category => {
-            const details = container.querySelector(`details[data-category="${category}"]`);
-            if (details) details.open = true;
-        });
-    }
-}
-
-// Helper function to calculate category grade
-function calculateCategoryGrade(category) {
-    const categoryAssignments = assignments.filter(a => a.category === category);
-    if (categoryAssignments.length === 0) return 0;
-    
-    const totalScore = categoryAssignments.reduce((sum, a) => sum + a.score, 0);
-    const totalPoints = categoryAssignments.reduce((sum, a) => sum + a.total, 0);
-    
-    return (totalScore / totalPoints) * 100;
-}
-
-addAssignmentBtn.addEventListener('click', () => {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <h2>Add New Assignment</h2>
-            <select id="categorySelect">
-                ${Array.from(new Set(assignments.map(a => a.category))).map(category => `<option value="${category}">${category}</option>`).join('')}
-            </select>
-            <input type="text" id="assignmentName" placeholder="Assignment Name">
-            <input type="number" id="assignmentScore" placeholder="Score" min="0">
-            <input type="number" id="assignmentTotal" placeholder="Total Points" min="0">
-            <div class="modal-buttons">
-                <button id="cancelAdd">Cancel</button>
-                <button id="confirmAdd">Add Assignment</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-
-    modal.querySelector('#cancelAdd').onclick = () => modal.remove();
-    modal.querySelector('#confirmAdd').onclick = () => {
-        const name = modal.querySelector('#assignmentName').value;
-        const score = parseFloat(modal.querySelector('#assignmentScore').value);
-        const total = parseFloat(modal.querySelector('#assignmentTotal').value);
-        const category = modal.querySelector('#categorySelect').value;
-        
-        if (name && !isNaN(score) && !isNaN(total)) {
-            const assignment = {
-                name: name,
-                score: score,
-                total: total,
-                category: category
-            };
-            assignments.push(assignment);
-            trackGradeChange(assignment, 0, score);
+        modal.querySelector('#cancelEdit').onclick = () => modal.remove();
+        modal.querySelector('#confirmEdit').onclick = () => {
+            assignment.name = modal.querySelector('#editName').value;
+            assignment.score = parseFloat(modal.querySelector('#editScore').value);
+            assignment.total = parseFloat(modal.querySelector('#editTotal').value);
+            assignment.weight = parseFloat(modal.querySelector('#editWeight').value);
+            row.querySelector('.assignment-name').value = assignment.name; // Update row
+            row.querySelector('.score').value = assignment.score; // Update row
+            row.querySelector('.total-points').value = assignment.total; // Update row
+            row.querySelector('.weight').value = assignment.weight; // Update row
             calculateTotal();
-            updateCategorySummaries(true);
             modal.remove();
-        } else {
-            alert('Please fill in all fields correctly');
-        }
-    };
-});
-
-// Update the removeAssignment function
-window.removeAssignment = function(name) {
-    const assignment = assignments.find(a => a.name === name);
-    if (!assignment) return;
-    
-    assignments = assignments.filter(a => a.name !== name);
-    calculateTotal();
-    updateCategorySummaries(true);
-    updateAnalytics();
-};
-
-// Update the editAssignment function to use the assignment name instead of index
-window.editAssignment = function(assignmentName) {
-    const assignment = assignments.find(a => a.name === assignmentName);
-    if (!assignment) {
-        console.error('Assignment not found:', assignmentName);
-        return;
+        };
     }
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <h2>Edit Assignment</h2>
-            <input type="text" id="editName" value="${assignment.name}" placeholder="Assignment Name">
-            <div class="score-inputs">
-                <input type="number" id="editScore" value="${assignment.score}" min="0" step="any" placeholder="Score">
-                <span>/</span>
-                <input type="number" id="editTotal" value="${assignment.total}" min="0" step="any" placeholder="Total Points">
-            </div>
-            <div class="current-details">
-                <p>Current Grade: ${((assignment.score/assignment.total)*100).toFixed(2)}% (${getLetterGrade((assignment.score/assignment.total)*100)})</p>
-            </div>
-            <div class="modal-buttons">
-                <button id="cancelEdit">Cancel</button>
-                <button id="confirmEdit">Save</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    modal.querySelector('#cancelEdit').onclick = () => modal.remove();
-    modal.querySelector('#confirmEdit').onclick = async () => {
-        const oldScore = assignment.score;
-        const newScore = parseFloat(modal.querySelector('#editScore').value);
+
+    function updateCategorySummaries(maintainState = false) {
+        const container = document.getElementById('categorySummaries');
+        const expandedCategories = maintainState ? 
+            Array.from(container.querySelectorAll('details[open]')).map(el => el.dataset.category) : [];
         
-        if (isNaN(newScore)) {
-            alert('Please enter a valid score');
-            return;
-        }
-        
-        assignment.score = newScore;
-        trackGradeChange(assignment, oldScore, newScore);
-        calculateTotal();
-        updateCategorySummaries();
-        modal.remove();
-    };
-};
+        container.innerHTML = '';
 
-function getRemainingAssignmentsHTML() {
-    // Get assignments with no scores
-    const remaining = assignments.filter(a => !a.score || a.score === 0);
-    return remaining.map(a => `
-        <div class="scenario-assignment">
-            <span>${a.name}</span>
-            <input type="number" 
-                   data-assignment="${a.name}"
-                   min="0" 
-                   max="${a.total}"
-                   placeholder="Expected score">
-            <span>/ ${a.total}</span>
-        </div>
-    `).join('');
-}
+        const uniqueCategories = [...new Set(assignments.map(a => a.category))];
 
-function calculateProjectedGrade(scenarioScores) {
-    // Create a deep copy of current assignments
-    const projectedAssignments = assignments.map(a => ({...a}));
-    
-    // Apply scenario scores
-    scenarioScores.forEach(score => {
-        const assignment = projectedAssignments.find(a => a.name === score.name);
-        if (assignment) {
-            assignment.score = score.value;
-        }
-    });
+        uniqueCategories.forEach(category => {
+            const categoryAssignments = assignments.filter(a => a.category === category);
+            const categoryData = {
+                totalScore: categoryAssignments.reduce((sum, a) => sum + a.score, 0),
+                totalPoints: categoryAssignments.reduce((sum, a) => sum + a.total, 0),
+                weight: categoryAssignments[0]?.weight || 0
+            };
 
-    // Calculate using existing total calculation logic
-    return calculateTotalForAssignments(projectedAssignments);
-}
+            const percentage = (categoryData.totalScore / categoryData.totalPoints) * 100;
+            const letterGrade = getLetterGrade(percentage);
 
-function calculateMinimumNeeded(targetGrade = 90) {
-    const remaining = assignments.filter(a => !a.score || a.score === 0);
-    if (remaining.length === 0) return 0;
-    
-    const totalRemainingPoints = remaining.reduce((sum, a) => sum + a.total, 0);
-    const currentTotal = calculateTotal(true);
-    
-    if (totalRemainingPoints === 0) return 0;
-    
-    const pointsNeeded = (targetGrade - currentTotal) * totalRemainingPoints / 100;
-    const percentageNeeded = (pointsNeeded / totalRemainingPoints) * 100;
-    
-    return isNaN(percentageNeeded) ? 0 : Math.max(0, percentageNeeded);
-}
-    
-// Event Listeners
-document.getElementById('newScenario').addEventListener('click', createScenario);
+            const categoryDiv = document.createElement('details');
+            categoryDiv.className = 'category-summary';
+            categoryDiv.dataset.category = category;
+            
+            if (maintainState && expandedCategories.includes(category)) {
+                categoryDiv.open = true;
+            }
+            
+            categoryDiv.innerHTML = `
+                <summary class="category-header">
+                    <div class="category-info">
+                        <span class="category-name">${category}</span>
+                        <span class="category-grade">${percentage.toFixed(2)}% (${letterGrade})</span>
+                    </div>
+                </summary>
+                <div class="category-details">
+                    <p>Weight: ${categoryData.weight}%</p>
+                    <p>Points: ${categoryData.totalScore}/${categoryData.totalPoints}</p>
+                    <div class="category-assignments" data-category="${category}">
+                        ${categoryAssignments.map(assignment => {
+                            const assignmentPercentage = (assignment.score / assignment.total) * 100;
+                            const assignmentLetterGrade = getLetterGrade(assignmentPercentage);
+                            return `
+                                <div class="assignment-detail" draggable="true" data-name="${assignment.name}" data-category="${category}">
+                                    <span class="assignment-name">${assignment.name}</span>
+                                    <div class="assignment-scores">
+                                        <span>${assignment.score}/${assignment.total}</span>
+                                        <span>(${assignmentPercentage.toFixed(2)}%)</span>
+                                        <span>${assignmentLetterGrade}</span>
+                                        <button class="edit-btn" onclick="editAssignment('${assignment.name}')">Edit</button>
+                                        <button class="delete-btn" onclick="removeAssignment('${assignment.name}')">×</button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(categoryDiv);
+        });
 
-document.getElementById('scenarioSelect').addEventListener('change', (e) => {
-    const scenario = scenarios.find(s => s.id === e.target.value);
-    if (scenario) {
-        const projected = calculateProjectedGrade(scenario.scores);
-        document.getElementById('projectedGrade').textContent = 
-            `${projected.toFixed(2)}% (${getLetterGrade(projected)})`;
-    }
-});
+        // Add drag and drop listeners
+        document.querySelectorAll('.assignment-detail').forEach(assignment => {
+            assignment.addEventListener('dragstart', (e) => {
+                e.stopPropagation();
+                e.target.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', e.target.dataset.name);
+            });
 
-function saveScenario(modal) {
-    const name = modal.querySelector('#scenarioName').value;
-    const scores = [];
-    
-    modal.querySelectorAll('.scenario-assignment input').forEach(input => {
-        const value = parseFloat(input.value);
-        if (!isNaN(value)) {
-            scores.push({
-                name: input.dataset.assignment,
-                value: value
+            assignment.addEventListener('dragend', (e) => {
+                e.target.classList.remove('dragging');
+            });
+        });
+
+        // Add drop zones to existing category sections
+        document.querySelectorAll('.category-assignments').forEach(dropZone => {
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', (e) => {
+                dropZone.classList.remove('drag-over');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                
+                const assignmentName = e.dataTransfer.getData('text/plain');
+                const newCategory = dropZone.dataset.category;
+                
+                // Find the assignment and update its category
+                const assignment = assignments.find(a => a.name === assignmentName);
+                if (assignment && assignment.category !== newCategory) {
+                    // Update only the category, keep other properties unchanged
+                    assignment.category = newCategory;
+                    
+                    // Update the UI without creating new categories
+                    calculateTotal();
+                    updateCategorySummaries();
+                }
+            });
+        });
+
+        initializeDragAndDrop();
+
+        // Restore expanded state
+        if (maintainState) {
+            expandedCategories.forEach(category => {
+                const details = container.querySelector(`details[data-category="${category}"]`);
+                if (details) details.open = true;
             });
         }
-    });
-    
-    const scenario = {
-        id: Date.now().toString(),
-        name: name,
-        scores: scores,
-        created: new Date()
-    };
-    
-    scenarios.push(scenario);
-    updateScenarioSelect();
-    updatePredictions();
-    
-    modal.remove();
-}
-
-function updatePredictions() {
-    const minNeeded = calculateMinimumNeeded();
-    document.getElementById('minGradeNeeded').textContent = 
-        minNeeded === 0 ? 'Target achieved!' : `${minNeeded.toFixed(2)}%`;
-    
-    if (scenarios.length > 0) {
-        const latestScenario = scenarios[scenarios.length - 1];
-        const projected = calculateProjectedGrade(latestScenario.scores);
-        document.getElementById('projectedGrade').textContent = 
-            `${projected.toFixed(2)}% (${getLetterGrade(projected)})`;
     }
-}
 
-function updateScenarioSelect() {
-    const select = document.getElementById('scenarioSelect');
-    select.innerHTML = '<option value="">Select Scenario</option>' +
-        scenarios.map(s => `
-            <option value="${s.id}">${s.name}</option>
-        `).join('');
-}
+    // Helper function to calculate category grade
+    function calculateCategoryGrade(category) {
+        const categoryAssignments = assignments.filter(a => a.category === category);
+        if (categoryAssignments.length === 0) return 0;
+        
+        const totalScore = categoryAssignments.reduce((sum, a) => sum + a.score, 0);
+        const totalPoints = categoryAssignments.reduce((sum, a) => sum + a.total, 0);
+        
+        return (totalScore / totalPoints) * 100;
+    }
 
-function setupScenarioListeners(modal) {
-    // Cancel button listener
-    modal.querySelector('#cancelScenario').addEventListener('click', () => {
-        modal.remove();
+    addAssignmentBtn.addEventListener('click', () => {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Add New Assignment</h2>
+                <select id="categorySelect">
+                    ${Array.from(new Set(assignments.map(a => a.category))).map(category => `<option value="${category}">${category}</option>`).join('')}
+                </select>
+                <input type="text" id="assignmentName" placeholder="Assignment Name">
+                <input type="number" id="assignmentScore" placeholder="Score" min="0">
+                <input type="number" id="assignmentTotal" placeholder="Total Points" min="0">
+                <div class="modal-buttons">
+                    <button id="cancelAdd">Cancel</button>
+                    <button id="confirmAdd">Add Assignment</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#cancelAdd').onclick = () => modal.remove();
+        modal.querySelector('#confirmAdd').onclick = () => {
+            const name = modal.querySelector('#assignmentName').value;
+            const score = parseFloat(modal.querySelector('#assignmentScore').value);
+            const total = parseFloat(modal.querySelector('#assignmentTotal').value);
+            const category = modal.querySelector('#categorySelect').value;
+            
+            if (name && !isNaN(score) && !isNaN(total)) {
+                const assignment = {
+                    name: name,
+                    score: score,
+                    total: total,
+                    category: category
+                };
+                assignments.push(assignment);
+                trackGradeChange(assignment, 0, score);
+                calculateTotal();
+                updateCategorySummaries(true);
+                modal.remove();
+            } else {
+                alert('Please fill in all fields correctly');
+            }
+        };
     });
 
-    // Save button listener
-    modal.querySelector('#saveScenario').addEventListener('click', () => {
-        const name = modal.querySelector('#scenarioName').value;
-        if (!name) {
-            alert('Please enter a scenario name');
+    // Update the removeAssignment function
+    window.removeAssignment = function(name) {
+        const assignment = assignments.find(a => a.name === name);
+        if (!assignment) return;
+        
+        assignments = assignments.filter(a => a.name !== name);
+        calculateTotal();
+        updateCategorySummaries(true);
+        updateAnalytics();
+    };
+
+    // Update the editAssignment function to use the assignment name instead of index
+    window.editAssignment = function(assignmentName) {
+        const assignment = assignments.find(a => a.name === assignmentName);
+        if (!assignment) {
+            console.error('Assignment not found:', assignmentName);
             return;
         }
-
-        const saveBtn = modal.querySelector('#saveScenario');
-        saveBtn.classList.add('loading');
-        saveBtn.disabled = true;
-
-        try {
-            saveScenario(modal);
-        } finally {
-            saveBtn.classList.remove('loading');
-            saveBtn.disabled = false;
-        }
-    });
-
-    // Close modal when clicking outside
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
+    
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Edit Assignment</h2>
+                <input type="text" id="editName" value="${assignment.name}" placeholder="Assignment Name">
+                <div class="score-inputs">
+                    <input type="number" id="editScore" value="${assignment.score}" min="0" step="any" placeholder="Score">
+                    <span>/</span>
+                    <input type="number" id="editTotal" value="${assignment.total}" min="0" step="any" placeholder="Total Points">
+                </div>
+                <div class="current-details">
+                    <p>Current Grade: ${((assignment.score/assignment.total)*100).toFixed(2)}% (${getLetterGrade((assignment.score/assignment.total)*100)})</p>
+                </div>
+                <div class="modal-buttons">
+                    <button id="cancelEdit">Cancel</button>
+                    <button id="confirmEdit">Save</button>
+                </div>
+            </div>
+        `;
+    
+        document.body.appendChild(modal);
+    
+        modal.querySelector('#cancelEdit').onclick = () => modal.remove();
+        modal.querySelector('#confirmEdit').onclick = async () => {
+            const oldScore = assignment.score;
+            const newScore = parseFloat(modal.querySelector('#editScore').value);
+            
+            if (isNaN(newScore)) {
+                alert('Please enter a valid score');
+                return;
+            }
+            
+            assignment.score = newScore;
+            trackGradeChange(assignment, oldScore, newScore);
+            calculateTotal();
+            updateCategorySummaries();
             modal.remove();
-        }
+        };
+    };
+
+    // Keep the grading scale change event listener
+    document.getElementById('gradingScale').addEventListener('change', () => {
+        calculateTotal();
     });
 
-    // Focus on name input when modal opens
-    modal.querySelector('#scenarioName').focus();
-}
+    function getRemainingAssignmentsHTML() {
+        // Get assignments with no scores
+        const remaining = assignments.filter(a => !a.score || a.score === 0);
+        return remaining.map(a => `
+            <div class="scenario-assignment">
+                <span>${a.name}</span>
+                <input type="number" 
+                       data-assignment="${a.name}"
+                       min="0" 
+                       max="${a.total}"
+                       placeholder="Expected score">
+                <span>/ ${a.total}</span>
+            </div>
+        `).join('');
+    }
 
-function calculateTotalForAssignments(assignmentList) {
-    let weightedSum = 0;
-    let totalWeight = 0;
-    
-    // Group assignments by category
-    const categories = {};
-    assignmentList.forEach(assignment => {
-        if (!categories[assignment.category]) {
-            categories[assignment.category] = [];
-        }
-        categories[assignment.category].push(assignment);
-    });
-    
-    // Calculate weighted average for each category
-    for (const category in categories) {
-        const categoryAssignments = categories[category];
-        if (categoryAssignments.length === 0) continue;
+    function calculateProjectedGrade(scenarioScores) {
+        // Create a deep copy of current assignments
+        const projectedAssignments = assignments.map(a => ({...a}));
         
-        const categoryScore = categoryAssignments.reduce((sum, a) => sum + a.score, 0);
-        const categoryTotal = categoryAssignments.reduce((sum, a) => sum + a.total, 0);
-        const categoryWeight = categoryAssignments[0].weight;
+        // Apply scenario scores
+        scenarioScores.forEach(score => {
+            const assignment = projectedAssignments.find(a => a.name === score.name);
+            if (assignment) {
+                assignment.score = score.value;
+            }
+        });
+
+        // Calculate using existing total calculation logic
+        return calculateTotalForAssignments(projectedAssignments);
+    }
+
+    function calculateMinimumNeeded(targetGrade = 90) {
+        const remaining = assignments.filter(a => !a.score || a.score === 0);
+        if (remaining.length === 0) return 0;
         
-        if (categoryTotal > 0) {
-            weightedSum += (categoryScore / categoryTotal) * categoryWeight;
-            totalWeight += categoryWeight;
-        }
+        const totalRemainingPoints = remaining.reduce((sum, a) => sum + a.total, 0);
+        const currentTotal = calculateTotal(true);
+        
+        if (totalRemainingPoints === 0) return 0;
+        
+        const pointsNeeded = (targetGrade - currentTotal) * totalRemainingPoints / 100;
+        const percentageNeeded = (pointsNeeded / totalRemainingPoints) * 100;
+        
+        return isNaN(percentageNeeded) ? 0 : Math.max(0, percentageNeeded);
     }
     
-    return totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0;
-}
+    // Event Listeners
+    document.getElementById('newScenario').addEventListener('click', createScenario);
 
-// Add this function to initialize the chart
-function initializeGradeChart() {
-    const ctx = document.getElementById('gradeChart').getContext('2d');
-    
-    gradeChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Assignment Grades',
-                borderColor: '#1976d2',
-                backgroundColor: 'rgba(25, 118, 210, 0.1)',
-                data: [],
-                fill: true,
-                tension: 0.1,
-                pointRadius: 4,                    // Make points larger
-                pointHoverRadius: 6,               // Larger on hover
-                pointBackgroundColor: '#1976d2',   // Match line color
-                pointBorderColor: '#fff',          // White border
-                pointBorderWidth: 2                // Visible border
-            }, {
-                label: 'Overall Grade',
-                borderColor: '#28a745',
-                backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                data: [],
-                fill: true,
-                tension: 0.1,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#28a745',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.1)'
-                    },
-                    ticks: {
-                        callback: value => `${value}%`,
-                        stepSize: 20,
-                        font: {
-                            size: 11
-                        }
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        autoSkip: true,
-                        maxRotation: 45,
-                        minRotation: 45,
-                        font: {
-                            size: 11
-                        },
-                        padding: 11    // Add more padding between labels
-                    }
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: (context) => {
-                            const label = context.dataset.label;
-                            const value = context.parsed.y;
-                            const letterGrade = getLetterGrade(value);
-                            return `${label}: ${value.toFixed(2)}% (${letterGrade})`;
-                        }
-                    }
-                },
-                legend: {
-                    position: 'top',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 20,
-                        font: {
-                            size: 12
-                        }
-                    }
-                }
-            },
-            layout: {
-                padding: {
-                    left: 10,
-                    right: 10,
-                    top: 10,
-                    bottom: 20    // Extra padding at bottom for labels
-                }
-            }
+    document.getElementById('scenarioSelect').addEventListener('change', (e) => {
+        const scenario = scenarios.find(s => s.id === e.target.value);
+        if (scenario) {
+            const projected = calculateProjectedGrade(scenario.scores);
+            document.getElementById('projectedGrade').textContent = 
+                `${projected.toFixed(2)}% (${getLetterGrade(projected)})`;
         }
     });
-}
 
-// Add this to your DOMContentLoaded event listener
-initializeGradeChart();
+    function saveScenario(modal) {
+        const name = modal.querySelector('#scenarioName').value;
+        const scores = [];
+        
+        modal.querySelectorAll('.scenario-assignment input').forEach(input => {
+            const value = parseFloat(input.value);
+            if (!isNaN(value)) {
+                scores.push({
+                    name: input.dataset.assignment,
+                    value: value
+                });
+            }
+        });
+        
+        const scenario = {
+            id: Date.now().toString(),
+            name: name,
+            scores: scores,
+            created: new Date()
+        };
+        
+        scenarios.push(scenario);
+        updateScenarioSelect();
+        updatePredictions();
+        
+        modal.remove();
+    }
+
+    function updatePredictions() {
+        const minNeeded = calculateMinimumNeeded();
+        document.getElementById('minGradeNeeded').textContent = 
+            minNeeded === 0 ? 'Target achieved!' : `${minNeeded.toFixed(2)}%`;
+        
+        if (scenarios.length > 0) {
+            const latestScenario = scenarios[scenarios.length - 1];
+            const projected = calculateProjectedGrade(latestScenario.scores);
+            document.getElementById('projectedGrade').textContent = 
+                `${projected.toFixed(2)}% (${getLetterGrade(projected)})`;
+        }
+    }
+
+    function updateScenarioSelect() {
+        const select = document.getElementById('scenarioSelect');
+        select.innerHTML = '<option value="">Select Scenario</option>' +
+            scenarios.map(s => `
+                <option value="${s.id}">${s.name}</option>
+            `).join('');
+    }
+
+    function setupScenarioListeners(modal) {
+        // Cancel button listener
+        modal.querySelector('#cancelScenario').addEventListener('click', () => {
+            modal.remove();
+        });
+
+        // Save button listener
+        modal.querySelector('#saveScenario').addEventListener('click', () => {
+            const name = modal.querySelector('#scenarioName').value;
+            if (!name) {
+                alert('Please enter a scenario name');
+                return;
+            }
+
+            const saveBtn = modal.querySelector('#saveScenario');
+            saveBtn.classList.add('loading');
+            saveBtn.disabled = true;
+
+            try {
+                saveScenario(modal);
+            } finally {
+                saveBtn.classList.remove('loading');
+                saveBtn.disabled = false;
+            }
+        });
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+
+        // Focus on name input when modal opens
+        modal.querySelector('#scenarioName').focus();
+    }
+
+    function calculateTotalForAssignments(assignmentList) {
+        let weightedSum = 0;
+        let totalWeight = 0;
+        
+        // Group assignments by category
+        const categories = {};
+        assignmentList.forEach(assignment => {
+            if (!categories[assignment.category]) {
+                categories[assignment.category] = [];
+            }
+            categories[assignment.category].push(assignment);
+        });
+        
+        // Calculate weighted average for each category
+        for (const category in categories) {
+            const categoryAssignments = categories[category];
+            if (categoryAssignments.length === 0) continue;
+            
+            const categoryScore = categoryAssignments.reduce((sum, a) => sum + a.score, 0);
+            const categoryTotal = categoryAssignments.reduce((sum, a) => sum + a.total, 0);
+            const categoryWeight = categoryAssignments[0].weight;
+            
+            if (categoryTotal > 0) {
+                weightedSum += (categoryScore / categoryTotal) * categoryWeight;
+                totalWeight += categoryWeight;
+            }
+        }
+        
+        return totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0;
+    }
+
+    // Add this function to initialize the chart
+    function initializeGradeChart() {
+        const ctx = document.getElementById('gradeChart').getContext('2d');
+        
+        gradeChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Assignment Grades',
+                    borderColor: '#1976d2',
+                    backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                    data: [],
+                    fill: true,
+                    tension: 0.1,
+                    pointRadius: 4,                    // Make points larger
+                    pointHoverRadius: 6,               // Larger on hover
+                    pointBackgroundColor: '#1976d2',   // Match line color
+                    pointBorderColor: '#fff',          // White border
+                    pointBorderWidth: 2                // Visible border
+                }, {
+                    label: 'Overall Grade',
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    data: [],
+                    fill: true,
+                    tension: 0.1,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#28a745',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        ticks: {
+                            callback: value => `${value}%`,
+                            stepSize: 20,
+                            font: {
+                                size: 11
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxRotation: 45,
+                            minRotation: 45,
+                            font: {
+                                size: 11
+                            },
+                            padding: 11    // Add more padding between labels
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const label = context.dataset.label;
+                                const value = context.parsed.y;
+                                const letterGrade = getLetterGrade(value);
+                                return `${label}: ${value.toFixed(2)}% (${letterGrade})`;
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 10,
+                        top: 10,
+                        bottom: 20    // Extra padding at bottom for labels
+                    }
+                }
+            }
+        });
+    }
+
+    // Add this to your DOMContentLoaded event listener
+    initializeGradeChart();
+});
