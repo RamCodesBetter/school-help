@@ -237,17 +237,18 @@ function createCategory() {
             return;
         }
 
-        // Add the new category
+        // Add the new category with a dummy assignment
         assignments.push({
             category: name,
             weight: weight,
-            name: '',
-            score: null,
-            total: null
+            name: 'Assignment',
+            score: 100,
+            total: 100
         });
 
         updateCategoryList();
         updateCategorySummaries();
+        calculateTotal();
         document.body.removeChild(modal);
     });
 
@@ -302,6 +303,8 @@ function editCategory(categoryName) {
 
         updateCategoryList();
         updateCategorySummaries();
+        calculateTotal();
+        updateAnalytics();
         document.body.removeChild(modal);
     });
 
@@ -330,6 +333,8 @@ function deleteCategory(categoryName) {
         assignments = assignments.filter(a => a.category !== categoryName);
         updateCategoryList();
         updateCategorySummaries();
+        calculateTotal();
+        updateAnalytics();
         document.body.removeChild(modal);
     });
 
