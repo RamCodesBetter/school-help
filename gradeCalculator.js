@@ -211,116 +211,102 @@ function createCategory() {
     modal.className = 'modal';
     modal.innerHTML = `
         <div class="modal-content">
-            <h2>Create New Category</h2>
-            <div class="category-form">
-                <input type="text" id="categoryName" placeholder="Category Name" required>
-                <input type="number" id="categoryWeight" placeholder="Weight (%)" min="0" max="100" required>
+            <h2>Add New Category</h2>
+            <div class="form-group">
+                <label for="categoryName">Category Name:</label>
+                <input type="text" id="categoryName" required>
+            </div>
+            <div class="form-group">
+                <label for="categoryWeight">Weight (%):</label>
+                <input type="number" id="categoryWeight" min="0" max="100" required>
             </div>
             <div class="modal-buttons">
-                <button class="cancel-btn" id="cancelCategory">Cancel</button>
-                <button class="confirm-btn" id="saveCategory">Create Category</button>
+                <button class="save-btn">Save</button>
+                <button class="cancel-btn">Cancel</button>
             </div>
         </div>
     `;
-    
     document.body.appendChild(modal);
-    
-    modal.querySelector('#cancelCategory').addEventListener('click', () => modal.remove());
-    modal.querySelector('#saveCategory').addEventListener('click', () => {
+
+    modal.querySelector('.save-btn').addEventListener('click', () => {
         const name = modal.querySelector('#categoryName').value.trim();
         const weight = parseFloat(modal.querySelector('#categoryWeight').value);
-        
+
         if (!name || isNaN(weight) || weight < 0 || weight > 100) {
-            alert('Please enter a valid category name and weight (0-100)');
+            alert('Please enter valid category details');
             return;
         }
-        
-        // Create a new category with a sample assignment
-        assignments.push({
-            name: 'New Assignment',
-            score: 0,
-            total: 100,
-            category: name,
-            weight: weight
-        });
-        
-        updateCategorySummaries(true);
-        updateCategoryList();
-        modal.remove();
-    });
-    
-    modal.querySelector('#categoryName').focus();
-}
 
-function initializeCategoryManagement() {
-    const categorySummaries = document.getElementById('categorySummaries');
-    const sidebar = document.getElementById('categorySidebar');
-    
-    // Create and add the manage categories button
-    const manageCategoriesBtn = document.createElement('button');
-    manageCategoriesBtn.textContent = 'Manage Categories';
-    manageCategoriesBtn.className = 'manage-categories-btn';
-    categorySummaries.parentElement.insertBefore(manageCategoriesBtn, categorySummaries);
-    
-    // Sidebar controls
-    manageCategoriesBtn.addEventListener('click', () => {
-        sidebar.classList.add('open');
+        // Add the new category
+        assignments.push({
+            category: name,
+            weight: weight,
+            name: '',
+            score: null,
+            total: null
+        });
+
         updateCategoryList();
+        updateCategorySummaries();
+        document.body.removeChild(modal);
     });
-    
-    document.getElementById('closeSidebar').addEventListener('click', () => {
-        sidebar.classList.remove('open');
+
+    modal.querySelector('.cancel-btn').addEventListener('click', () => {
+        document.body.removeChild(modal);
     });
-    
-    // Add Category button
-    document.getElementById('addCategory').addEventListener('click', createCategory);
 }
 
 function editCategory(categoryName) {
-    const categoryAssignments = assignments.filter(a => a.category === categoryName);
-    if (!categoryAssignments.length) return;
-    
-    const weight = categoryAssignments[0].weight;
-    
     const modal = document.createElement('div');
     modal.className = 'modal';
+    
+    // Find existing category weight
+    const categoryAssignment = assignments.find(a => a.category === categoryName);
+    const currentWeight = categoryAssignment ? categoryAssignment.weight : 0;
+
     modal.innerHTML = `
         <div class="modal-content">
             <h2>Edit Category</h2>
-            <div class="category-form">
-                <input type="text" id="categoryName" value="${categoryName}" placeholder="Category Name" required>
-                <input type="number" id="categoryWeight" value="${weight}" placeholder="Weight (%)" min="0" max="100" required>
+            <div class="form-group">
+                <label for="editCategoryName">Category Name:</label>
+                <input type="text" id="editCategoryName" value="${categoryName}" required>
+            </div>
+            <div class="form-group">
+                <label for="editCategoryWeight">Weight (%):</label>
+                <input type="number" id="editCategoryWeight" value="${currentWeight}" min="0" max="100" required>
             </div>
             <div class="modal-buttons">
-                <button class="cancel-btn" id="cancelCategory">Cancel</button>
-                <button class="confirm-btn" id="saveCategory">Save Changes</button>
+                <button class="save-btn">Save</button>
+                <button class="cancel-btn">Cancel</button>
             </div>
         </div>
     `;
-    
     document.body.appendChild(modal);
-    
-    modal.querySelector('#cancelCategory').addEventListener('click', () => modal.remove());
-    modal.querySelector('#saveCategory').addEventListener('click', () => {
-        const newName = modal.querySelector('#categoryName').value.trim();
-        const newWeight = parseFloat(modal.querySelector('#categoryWeight').value);
-        
+
+    modal.querySelector('.save-btn').addEventListener('click', () => {
+        const newName = modal.querySelector('#editCategoryName').value.trim();
+        const newWeight = parseFloat(modal.querySelector('#editCategoryWeight').value);
+
         if (!newName || isNaN(newWeight) || newWeight < 0 || newWeight > 100) {
-            alert('Please enter valid values');
+            alert('Please enter valid category details');
             return;
         }
-        
-        // Update all assignments in this category
-        assignments.forEach(a => {
-            if (a.category === categoryName) {
-                a.category = newName;
-                a.weight = newWeight;
+
+        // Update all assignments with this category
+        assignments.forEach(assignment => {
+            if (assignment.category === categoryName) {
+                assignment.category = newName;
+                assignment.weight = newWeight;
             }
         });
-        
-        updateCategorySummaries(true);
+
         updateCategoryList();
-        modal.remove();
+        updateCategorySummaries();
+        document.body.removeChild(modal);
+    });
+
+    modal.querySelector('.cancel-btn').addEventListener('click', () => {
+        document.body.removeChild(modal);
     });
 }
 
@@ -328,62 +314,60 @@ function deleteCategory(categoryName) {
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.innerHTML = `
-        <div class="modal-content delete-modal">
+        <div class="modal-content">
             <h2>Delete Category</h2>
             <p>Are you sure you want to delete the category "${categoryName}" and all its assignments?</p>
             <div class="modal-buttons">
-                <button class="cancel-btn" id="cancelDelete">Cancel</button>
-                <button class="confirm-btn" id="confirmDelete">Delete</button>
+                <button class="delete-btn">Delete</button>
+                <button class="cancel-btn">Cancel</button>
             </div>
         </div>
     `;
-    
     document.body.appendChild(modal);
-    
-    modal.querySelector('#cancelDelete').onclick = () => modal.remove();
-    modal.querySelector('#confirmDelete').onclick = () => {
+
+    modal.querySelector('.delete-btn').addEventListener('click', () => {
+        // Remove all assignments in this category
         assignments = assignments.filter(a => a.category !== categoryName);
-        updateCategorySummaries(true);
         updateCategoryList();
-        modal.remove();
-    };
+        updateCategorySummaries();
+        document.body.removeChild(modal);
+    });
+
+    modal.querySelector('.cancel-btn').addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
 }
 
 function updateCategoryList() {
     const categoryList = document.getElementById('categoryList');
-    categoryList.innerHTML = '';
-    
+    if (!categoryList) return;
+
     // Get unique categories and their weights
     const categories = {};
-    assignments.forEach(a => {
-        if (!categories[a.category]) {
-            categories[a.category] = a.weight;
+    assignments.forEach(assignment => {
+        if (!categories[assignment.category]) {
+            categories[assignment.category] = assignment.weight || 0;
         }
     });
-    
+
+    categoryList.innerHTML = '';
     Object.entries(categories).forEach(([category, weight]) => {
-        const categoryItem = document.createElement('div');
-        categoryItem.className = 'category-item';
-        categoryItem.innerHTML = `
-            <div class="category-item-header">
-                <span>${category}</span>
-                <div class="category-actions">
-                    <button class="edit-btn">Edit</button>
-                    <button class="delete-btn">Delete</button>
-                </div>
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'category-item';
+        categoryDiv.innerHTML = `
+            <div class="category-info">
+                <span class="category-name">${category}</span>
+                <span class="category-weight">${weight}%</span>
             </div>
-            <div class="category-weight">Weight: ${weight}%</div>
+            <div class="category-actions">
+                <button class="edit-btn" onclick="editCategory('${category}')">Edit</button>
+                <button class="delete-btn" onclick="deleteCategory('${category}')">Delete</button>
+            </div>
         `;
-        
-        // Add event listeners for edit and delete buttons
-        categoryItem.querySelector('.edit-btn').addEventListener('click', () => editCategory(category));
-        categoryItem.querySelector('.delete-btn').addEventListener('click', () => deleteCategory(category));
-        
-        categoryList.appendChild(categoryItem);
+        categoryList.appendChild(categoryDiv);
     });
 }
 
-// Add this function to global scope (before calculateTotal)
 function updateGradeColor(percentage) {
     const totalGradeSpan = document.getElementById('totalGrade');
     if (!totalGradeSpan) return;
@@ -394,7 +378,6 @@ function updateGradeColor(percentage) {
     totalGradeSpan.style.color = `rgb(${red}, ${green}, 0)`;
 }
 
-// Add this function before updateCategorySummaries
 function initializeDragAndDrop() {
     const categories = document.querySelectorAll('.category-summary');
     
@@ -516,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalGradeSpan = document.getElementById('totalGrade');
     const newScenarioBtn = document.getElementById('newScenario');
 
-    initializeCategoryManagement();
+    document.getElementById('addCategory').addEventListener('click', createCategory);
 
     function createScenario() {
         const modal = document.createElement('div');
