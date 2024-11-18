@@ -206,182 +206,23 @@ function getTrendHTML(trend) {
     return arrows[trend] || arrows.stable;
 }
 
-function createCategory() {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <h2>Add New Category</h2>
-            <div class="form-group">
-                <label for="categoryName">Category Name:</label>
-                <input type="text" id="categoryName" required>
-            </div>
-            <div class="form-group">
-                <label for="categoryWeight">Weight (%):</label>
-                <input type="number" id="categoryWeight" min="0" max="100" required>
-            </div>
-            <div class="modal-buttons">
-                <button class="save-btn">Save</button>
-                <button class="cancel-btn">Cancel</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-
-    modal.querySelector('.save-btn').addEventListener('click', () => {
-        const name = modal.querySelector('#categoryName').value.trim();
-        const weight = parseFloat(modal.querySelector('#categoryWeight').value);
-
-        if (!name || isNaN(weight) || weight < 0 || weight > 100) {
-            alert('Please enter valid category details');
-            return;
-        }
-
-        // Add the new category with a dummy assignment
-        assignments.push({
-            category: name,
-            weight: weight,
-            name: 'Assignment',
-            score: 100,
-            total: 100
-        });
-
-        updateCategoryList();
-        updateCategorySummaries();
-        updateAssignmentDropdowns();
-        calculateTotal();
-        updateAnalytics();
-        document.body.removeChild(modal);
-    });
-
-    modal.querySelector('.cancel-btn').addEventListener('click', () => {
-        document.body.removeChild(modal);
-    });
-}
-
-function editCategory(categoryName) {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
+function initializeCategoryManagement() {
+    const categorySummaries = document.getElementById('categorySummaries');
     
-    // Find existing category weight
-    const categoryAssignment = assignments.find(a => a.category === categoryName);
-    const currentWeight = categoryAssignment ? categoryAssignment.weight : 0;
-
-    modal.innerHTML = `
-        <div class="modal-content">
-            <h2>Edit Category</h2>
-            <div class="form-group">
-                <label for="editCategoryName">Category Name:</label>
-                <input type="text" id="editCategoryName" value="${categoryName}" required>
-            </div>
-            <div class="form-group">
-                <label for="editCategoryWeight">Weight (%):</label>
-                <input type="number" id="editCategoryWeight" value="${currentWeight}" min="0" max="100" required>
-            </div>
-            <div class="modal-buttons">
-                <button class="save-btn">Save</button>
-                <button class="cancel-btn">Cancel</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-
-    modal.querySelector('.save-btn').addEventListener('click', () => {
-        const newName = modal.querySelector('#editCategoryName').value.trim();
-        const newWeight = parseFloat(modal.querySelector('#editCategoryWeight').value);
-
-        if (!newName || isNaN(newWeight) || newWeight < 0 || newWeight > 100) {
-            alert('Please enter valid category details');
-            return;
-        }
-
-        // Update all assignments with this category
-        assignments.forEach(assignment => {
-            if (assignment.category === categoryName) {
-                assignment.category = newName;
-                assignment.weight = newWeight;
+    // Event delegation for category clicks
+    categorySummaries.addEventListener('click', (e) => {
+        const categoryHeader = e.target.closest('.category-header');
+        if (categoryHeader) {
+            const details = categoryHeader.closest('details');
+            if (details) {
+                // Toggle will happen automatically
+                localStorage.setItem(`category-${details.dataset.category}`, details.open ? 'closed' : 'open');
             }
-        });
-
-        updateCategoryList();
-        updateCategorySummaries();
-        updateAssignmentDropdowns();
-        calculateTotal();
-        updateAnalytics();
-        document.body.removeChild(modal);
-    });
-
-    modal.querySelector('.cancel-btn').addEventListener('click', () => {
-        document.body.removeChild(modal);
-    });
-}
-
-function deleteCategory(categoryName) {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <h2>Delete Category</h2>
-            <p>Are you sure you want to delete the category "${categoryName}" and all its assignments?</p>
-            <div class="modal-buttons">
-                <button class="delete-btn">Delete</button>
-                <button class="cancel-btn">Cancel</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-
-    modal.querySelector('.delete-btn').addEventListener('click', () => {
-        // Remove all assignments in this category
-        assignments = assignments.filter(a => a.category !== categoryName);
-        
-        // Remove the category's assignments from the DOM
-        const categoryRows = document.querySelectorAll(`tr[data-category="${categoryName}"]`);
-        categoryRows.forEach(row => row.remove());
-        
-        updateCategoryList();
-        updateCategorySummaries();
-        updateAssignmentDropdowns();
-        calculateTotal();
-        updateAnalytics();
-        document.body.removeChild(modal);
-    });
-
-    modal.querySelector('.cancel-btn').addEventListener('click', () => {
-        document.body.removeChild(modal);
-    });
-}
-
-function updateCategoryList() {
-    const categoryList = document.getElementById('categoryList');
-    if (!categoryList) return;
-
-    // Get unique categories and their weights
-    const categories = {};
-    assignments.forEach(assignment => {
-        if (!categories[assignment.category]) {
-            categories[assignment.category] = assignment.weight || 0;
         }
     });
-
-    categoryList.innerHTML = '';
-    Object.entries(categories).forEach(([category, weight]) => {
-        const categoryDiv = document.createElement('div');
-        categoryDiv.className = 'category-item';
-        categoryDiv.innerHTML = `
-            <div class="category-info">
-                <span class="category-name">${category}</span>
-                <span class="category-weight">${weight}%</span>
-            </div>
-            <div class="category-actions">
-                <button class="edit-btn" onclick="editCategory('${category}')">Edit</button>
-                <button class="delete-btn" onclick="deleteCategory('${category}')">Delete</button>
-            </div>
-        `;
-        categoryList.appendChild(categoryDiv);
-    });
 }
 
+// Add this function to global scope (before calculateTotal)
 function updateGradeColor(percentage) {
     const totalGradeSpan = document.getElementById('totalGrade');
     if (!totalGradeSpan) return;
@@ -392,6 +233,7 @@ function updateGradeColor(percentage) {
     totalGradeSpan.style.color = `rgb(${red}, ${green}, 0)`;
 }
 
+// Add this function before updateCategorySummaries
 function initializeDragAndDrop() {
     const categories = document.querySelectorAll('.category-summary');
     
@@ -508,25 +350,12 @@ function trackGradeChange(assignment, oldScore, newScore) {
     updateAnalytics();
 }
 
-function updateAssignmentDropdowns() {
-    // Update all assignment category dropdowns
-    const categoryDropdowns = document.querySelectorAll('select[data-field="category"]');
-    const categories = [...new Set(assignments.map(a => a.category))];
-    
-    categoryDropdowns.forEach(dropdown => {
-        const currentValue = dropdown.value;
-        dropdown.innerHTML = categories.map(cat => 
-            `<option value="${cat}" ${cat === currentValue ? 'selected' : ''}>${cat}</option>`
-        ).join('');
-    });
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     const addAssignmentBtn = document.getElementById('addAssignment');
     const totalGradeSpan = document.getElementById('totalGrade');
     const newScenarioBtn = document.getElementById('newScenario');
 
-    document.getElementById('addCategory').addEventListener('click', createCategory);
+    initializeCategoryManagement();
 
     function createScenario() {
         const modal = document.createElement('div');
