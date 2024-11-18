@@ -248,7 +248,9 @@ function createCategory() {
 
         updateCategoryList();
         updateCategorySummaries();
+        updateAssignmentDropdowns();
         calculateTotal();
+        updateAnalytics();
         document.body.removeChild(modal);
     });
 
@@ -303,6 +305,7 @@ function editCategory(categoryName) {
 
         updateCategoryList();
         updateCategorySummaries();
+        updateAssignmentDropdowns();
         calculateTotal();
         updateAnalytics();
         document.body.removeChild(modal);
@@ -331,8 +334,14 @@ function deleteCategory(categoryName) {
     modal.querySelector('.delete-btn').addEventListener('click', () => {
         // Remove all assignments in this category
         assignments = assignments.filter(a => a.category !== categoryName);
+        
+        // Remove the category's assignments from the DOM
+        const categoryRows = document.querySelectorAll(`tr[data-category="${categoryName}"]`);
+        categoryRows.forEach(row => row.remove());
+        
         updateCategoryList();
         updateCategorySummaries();
+        updateAssignmentDropdowns();
         calculateTotal();
         updateAnalytics();
         document.body.removeChild(modal);
@@ -517,6 +526,19 @@ function initializeCategoryManagement() {
     
     document.getElementById('closeSidebar').addEventListener('click', () => {
         sidebar.classList.remove('open');
+    });
+}
+
+function updateAssignmentDropdowns() {
+    // Update all assignment category dropdowns
+    const categoryDropdowns = document.querySelectorAll('select[data-field="category"]');
+    const categories = [...new Set(assignments.map(a => a.category))];
+    
+    categoryDropdowns.forEach(dropdown => {
+        const currentValue = dropdown.value;
+        dropdown.innerHTML = categories.map(cat => 
+            `<option value="${cat}" ${cat === currentValue ? 'selected' : ''}>${cat}</option>`
+        ).join('');
     });
 }
 
