@@ -52,12 +52,21 @@ class Course {
 function switchCourse(courseName) {
     if (courses[courseName]) {
         currentCourse = courseName;
-        // Update UI with current course data
-        document.getElementById('gradingScale').value = courses[courseName].gradingScale;
-        updateAssignmentDisplay();
-        updateAnalytics();
-        updateScenarioSelect();
-        updateCategorySummaries();
+        
+        // Update UI elements only if they exist
+        const gradingScale = document.getElementById('gradingScale');
+        if (gradingScale) {
+            gradingScale.value = courses[courseName].gradingScale;
+        }
+        
+        try {
+            updateAssignmentDisplay();
+            updateAnalytics();
+            updateScenarioSelect();
+            updateCategorySummaries();
+        } catch (error) {
+            console.error('Error updating course display:', error);
+        }
     }
 }
 
@@ -84,6 +93,39 @@ function updateCourseSelect() {
 
 function updateAssignmentDisplay() {
     const tbody = document.querySelector('#assignmentTable tbody');
+    if (!tbody) {
+        console.warn('Assignment table not found, creating it...');
+        const container = document.querySelector('.container');
+        if (!container) return;
+
+        // Create the table structure if it doesn't exist
+        const table = document.createElement('table');
+        table.id = 'assignmentTable';
+        table.className = 'assignment-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Assignment</th>
+                    <th>Score</th>
+                    <th>Total</th>
+                    <th>Category</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+        
+        // Insert table after the course controls
+        const courseControls = document.querySelector('.course-controls');
+        if (courseControls) {
+            courseControls.parentNode.insertBefore(table, courseControls.nextSibling);
+        } else {
+            container.appendChild(table);
+        }
+        
+        return updateAssignmentDisplay(); // Try again now that the table exists
+    }
+
     tbody.innerHTML = '';
     if (currentCourse && courses[currentCourse]) {
         courses[currentCourse].assignments.forEach(assignment => {
@@ -1162,6 +1204,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add this to your DOMContentLoaded event listener
     initializeGradeChart();
 
+    // Create basic UI structure if it doesn't exist
+    const container = document.querySelector('.container');
+    if (!container) {
+        const newContainer = document.createElement('div');
+        newContainer.className = 'container';
+        document.body.appendChild(newContainer);
+    }
+
     // Add course selection UI
     const courseManagement = document.createElement('div');
     courseManagement.className = 'course-management';
@@ -1174,10 +1224,35 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
     `;
     
-    document.querySelector('.container').insertBefore(
-        courseManagement,
-        document.querySelector('.container').firstChild
-    );
+    container.insertBefore(courseManagement, container.firstChild);
+
+    // Create grading scale select if it doesn't exist
+    if (!document.getElementById('gradingScale')) {
+        const scaleSelect = document.createElement('select');
+        scaleSelect.id = 'gradingScale';
+        scaleSelect.className = 'form-control';
+        scaleSelect.innerHTML = `
+            <option value="all">Standard (A, A-, B+, etc.)</option>
+            <option value="noMinus">No Minus (A, B+, B, etc.)</option>
+            <option value="simple">Simple (A, B, C, D, F)</option>
+        `;
+        container.appendChild(scaleSelect);
+    }
+
+    // Create basic grade display elements
+    const gradeDisplay = document.createElement('div');
+    gradeDisplay.className = 'grade-display';
+    gradeDisplay.innerHTML = `
+        <div id="totalGrade">No grades yet</div>
+        <div id="historyContainer"></div>
+        <div id="analytics">
+            <div>Average: <span id="averageGrade">-</span></div>
+            <div>Highest: <span id="highestGrade">-</span></div>
+            <div>Lowest: <span id="lowestGrade">-</span></div>
+            <div>Trend: <span id="gradeTrend">-</span></div>
+        </div>
+    `;
+    container.appendChild(gradeDisplay);
 
     // Add course management event listeners
     document.getElementById('addCourse').addEventListener('click', () => {
