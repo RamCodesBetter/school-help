@@ -452,7 +452,155 @@ function trackGradeChange(assignment, oldScore, newScore) {
     updateAnalytics();
 }
 
+function updateScenarioSelect() {
+    const select = document.getElementById('scenarioSelect');
+    if (!select) {
+        console.warn('Scenario select not found');
+        return;
+    }
+    
+    select.innerHTML = '<option value="">Select Scenario</option>';
+    if (currentCourse && courses[currentCourse]) {
+        courses[currentCourse].scenarios.forEach(s => {
+            const option = document.createElement('option');
+            option.value = s.id;
+            option.textContent = s.name;
+            select.appendChild(option);
+        });
+    }
+}
+
+function createBasicStructure() {
+    const container = document.querySelector('.container');
+    if (!container) {
+        const newContainer = document.createElement('div');
+        newContainer.className = 'container';
+        document.body.appendChild(newContainer);
+        return newContainer;
+    }
+    return container;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Create basic UI structure if it doesn't exist
+    if (!document.querySelector('.container')) {
+        const newContainer = document.createElement('div');
+        newContainer.className = 'container';
+        document.body.appendChild(newContainer);
+    }
+
+    // Get the container reference once
+    const container = document.querySelector('.container');
+    
+    // Add CSS styles
+    const style = document.createElement('style');
+    style.textContent = `
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .course-management {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+        .course-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        #courseSelect {
+            flex: 1;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .assignment-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        .assignment-table th,
+        .assignment-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .grade-display {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        #totalGrade {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        #analytics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Add course selection UI first
+    const courseManagement = document.createElement('div');
+    courseManagement.className = 'course-management';
+    courseManagement.innerHTML = `
+        <div class="course-controls">
+            <select id="courseSelect" class="form-control">
+                <option value="">Select a Course</option>
+            </select>
+            <button id="addCourse" class="btn btn-primary">Add Course</button>
+        </div>
+    `;
+    container.insertBefore(courseManagement, container.firstChild);
+
+    // Create grading scale select
+    const scaleContainer = document.createElement('div');
+    scaleContainer.className = 'grading-scale-container';
+    scaleContainer.innerHTML = `
+        <select id="gradingScale" class="form-control">
+            <option value="all">Standard (A, A-, B+, etc.)</option>
+            <option value="noMinus">No Minus (A, B+, B, etc.)</option>
+            <option value="simple">Simple (A, B, C, D, F)</option>
+        </select>
+    `;
+    container.appendChild(scaleContainer);
+
+    // Create grade display section
+    const gradeDisplay = document.createElement('div');
+    gradeDisplay.className = 'grade-display';
+    gradeDisplay.innerHTML = `
+        <div id="totalGrade">No grades yet</div>
+        <div id="historyContainer"></div>
+        <div id="analytics">
+            <div>Average: <span id="averageGrade">-</span></div>
+            <div>Highest: <span id="highestGrade">-</span></div>
+            <div>Lowest: <span id="lowestGrade">-</span></div>
+            <div>Trend: <span id="gradeTrend">-</span></div>
+        </div>
+    `;
+    container.appendChild(gradeDisplay);
+
+    // Create scenarios section
+    const scenariosSection = document.createElement('div');
+    scenariosSection.className = 'scenarios-section';
+    scenariosSection.innerHTML = `
+        <div class="scenarios-controls">
+            <select id="scenarioSelect">
+                <option value="">Select Scenario</option>
+            </select>
+            <button id="newScenario" class="btn btn-secondary">New Scenario</button>
+        </div>
+    `;
+    container.appendChild(scenariosSection);
+
     const addAssignmentBtn = document.getElementById('addAssignment');
     const totalGradeSpan = document.getElementById('totalGrade');
     const newScenarioBtn = document.getElementById('newScenario');
@@ -1024,14 +1172,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function updateScenarioSelect() {
-        const select = document.getElementById('scenarioSelect');
-        select.innerHTML = '<option value="">Select Scenario</option>' +
-            courses[currentCourse].scenarios.map(s => `
-                <option value="${s.id}">${s.name}</option>
-            `).join('');
-    }
-
     function setupScenarioListeners(modal) {
         // Cancel button listener
         modal.querySelector('#cancelScenario').addEventListener('click', () => {
@@ -1205,54 +1345,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeGradeChart();
 
     // Create basic UI structure if it doesn't exist
-    const container = document.querySelector('.container');
     if (!container) {
         const newContainer = document.createElement('div');
         newContainer.className = 'container';
         document.body.appendChild(newContainer);
     }
-
-    // Add course selection UI
-    const courseManagement = document.createElement('div');
-    courseManagement.className = 'course-management';
-    courseManagement.innerHTML = `
-        <div class="course-controls">
-            <select id="courseSelect" class="form-control">
-                <option value="">Select a Course</option>
-            </select>
-            <button id="addCourse" class="btn btn-primary">Add Course</button>
-        </div>
-    `;
-    
-    container.insertBefore(courseManagement, container.firstChild);
-
-    // Create grading scale select if it doesn't exist
-    if (!document.getElementById('gradingScale')) {
-        const scaleSelect = document.createElement('select');
-        scaleSelect.id = 'gradingScale';
-        scaleSelect.className = 'form-control';
-        scaleSelect.innerHTML = `
-            <option value="all">Standard (A, A-, B+, etc.)</option>
-            <option value="noMinus">No Minus (A, B+, B, etc.)</option>
-            <option value="simple">Simple (A, B, C, D, F)</option>
-        `;
-        container.appendChild(scaleSelect);
-    }
-
-    // Create basic grade display elements
-    const gradeDisplay = document.createElement('div');
-    gradeDisplay.className = 'grade-display';
-    gradeDisplay.innerHTML = `
-        <div id="totalGrade">No grades yet</div>
-        <div id="historyContainer"></div>
-        <div id="analytics">
-            <div>Average: <span id="averageGrade">-</span></div>
-            <div>Highest: <span id="highestGrade">-</span></div>
-            <div>Lowest: <span id="lowestGrade">-</span></div>
-            <div>Trend: <span id="gradeTrend">-</span></div>
-        </div>
-    `;
-    container.appendChild(gradeDisplay);
 
     // Add course management event listeners
     document.getElementById('addCourse').addEventListener('click', () => {
