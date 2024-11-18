@@ -2,6 +2,8 @@ let assignments = [];
 let scenarios = [];
 let gradeHistory = [];
 let gradeChart = null;
+let currentCourse = null;
+let courses = {};
 
 const gradingScales = {
     all: (percentage) => {
@@ -35,6 +37,61 @@ const gradingScales = {
         return 'F';
     }
 };
+
+class Course {
+    constructor(name, scale = 'all') {
+        this.name = name;
+        this.gradingScale = scale;
+        this.assignments = [];
+        this.scenarios = [];
+        this.gradeHistory = [];
+        this.categories = new Set();
+    }
+}
+
+function switchCourse(courseName) {
+    if (courses[courseName]) {
+        currentCourse = courseName;
+        // Update UI with current course data
+        document.getElementById('gradingScale').value = courses[courseName].gradingScale;
+        updateAssignmentDisplay();
+        updateAnalytics();
+        updateScenarioSelect();
+        updateCategorySummaries();
+    }
+}
+
+function createNewCourse(name, scale = 'all') {
+    if (!courses[name]) {
+        courses[name] = new Course(name, scale);
+        currentCourse = name;
+        updateCourseSelect();
+        switchCourse(name);
+    }
+}
+
+function updateCourseSelect() {
+    const courseSelect = document.getElementById('courseSelect');
+    courseSelect.innerHTML = '';
+    Object.keys(courses).forEach(courseName => {
+        const option = document.createElement('option');
+        option.value = courseName;
+        option.textContent = courseName;
+        option.selected = courseName === currentCourse;
+        courseSelect.appendChild(option);
+    });
+}
+
+function updateAssignmentDisplay() {
+    const tbody = document.querySelector('#assignmentTable tbody');
+    tbody.innerHTML = '';
+    if (currentCourse && courses[currentCourse]) {
+        courses[currentCourse].assignments.forEach(assignment => {
+            const row = createAssignmentRow(assignment);
+            tbody.appendChild(row);
+        });
+    }
+}
 
 function getLetterGrade(percentage) {
     const scale = document.getElementById('gradingScale')?.value || 'all';
@@ -78,7 +135,9 @@ function calculateTotalForAssignments(assignmentList) {
 }
 
 function calculateTotal(returnOnly = false) {
-    const finalGrade = calculateTotalForAssignments(assignments);
+    if (!currentCourse || !courses[currentCourse]) return 0;
+    
+    const finalGrade = calculateTotalForAssignments(courses[currentCourse].assignments);
     
     if (returnOnly) return finalGrade;
     
@@ -91,13 +150,16 @@ function calculateTotal(returnOnly = false) {
 }
 
 function updateAnalytics() {
-    if (!assignments || assignments.length === 0) {
+    if (!currentCourse || !courses[currentCourse]) return;
+    
+    const currentAssignments = courses[currentCourse].assignments;
+    if (!currentAssignments || currentAssignments.length === 0) {
         console.log('No assignments to analyze');
         return;
     }
 
     // Filter out assignments without scores
-    const completedAssignments = assignments.filter(a => 
+    const completedAssignments = currentAssignments.filter(a => 
         a.score !== undefined && 
         a.score !== null && 
         a.total !== undefined && 
@@ -141,13 +203,13 @@ function updateAnalytics() {
 
     // Update the chart
     if (gradeChart) {
-        const completedAssignments = assignments.filter(a => 
+        const completedAssignments = currentAssignments.filter(a => 
             a.score !== undefined && 
             a.total !== undefined &&
             a.total > 0
         ).sort((a, b) => {
-            const indexA = gradeHistory.findIndex(h => h.assignment === a.name);
-            const indexB = gradeHistory.findIndex(h => h.assignment === b.name);
+            const indexA = courses[currentCourse].gradeHistory.findIndex(h => h.assignment === a.name);
+            const indexB = courses[currentCourse].gradeHistory.findIndex(h => h.assignment === b.name);
             return indexA - indexB;
         });
 
@@ -187,9 +249,9 @@ function updateAnalytics() {
 }
 
 function calculateTrend() {
-    if (gradeHistory.length < 2) return 'stable';
+    if (courses[currentCourse].gradeHistory.length < 2) return 'stable';
     
-    const recent = gradeHistory.slice(-3);
+    const recent = courses[currentCourse].gradeHistory.slice(-3);
     const grades = recent.map(h => h.totalGrade);
     
     if (grades.every((g, i) => i === 0 || g >= grades[i - 1])) return 'up';
@@ -222,7 +284,6 @@ function initializeCategoryManagement() {
     });
 }
 
-// Add this function to global scope (before calculateTotal)
 function updateGradeColor(percentage) {
     const totalGradeSpan = document.getElementById('totalGrade');
     if (!totalGradeSpan) return;
@@ -233,7 +294,6 @@ function updateGradeColor(percentage) {
     totalGradeSpan.style.color = `rgb(${red}, ${green}, 0)`;
 }
 
-// Add this function before updateCategorySummaries
 function initializeDragAndDrop() {
     const categories = document.querySelectorAll('.category-summary');
     
@@ -302,7 +362,7 @@ function initializeDragAndDrop() {
             
             const assignmentName = e.dataTransfer.getData('text/plain');
             const newCategory = zone.closest('.category-summary').dataset.category;
-            const assignment = assignments.find(a => a.name === assignmentName);
+            const assignment = courses[currentCourse].assignments.find(a => a.name === assignmentName);
             
             if (assignment && assignment.category !== newCategory) {
                 assignment.category = newCategory;
@@ -326,7 +386,7 @@ function updateHistoryDisplay() {
     const container = document.getElementById('historyContainer');
     if (!container) return;
     
-    const recentHistory = gradeHistory.slice(-5).reverse();
+    const recentHistory = courses[currentCourse].gradeHistory.slice(-5).reverse();
     
     container.innerHTML = recentHistory.map(h => `
         <div class="history-item">
@@ -340,7 +400,7 @@ function updateHistoryDisplay() {
 }
 
 function trackGradeChange(assignment, oldScore, newScore) {
-    gradeHistory.push({
+    courses[currentCourse].gradeHistory.push({
         date: new Date(),
         assignment: assignment.name,
         oldScore: oldScore,
@@ -438,9 +498,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (currentAssignmentName && 
                     !currentAssignmentName.includes('Search') && 
                     !currentAssignmentName.includes('Skip To Content') &&
-                    !assignments.some(a => a.name === currentAssignmentName)) {
+                    !courses[currentCourse].assignments.some(a => a.name === currentAssignmentName)) {
                     
-                    assignments.push({
+                    courses[currentCourse].assignments.push({
                         name: currentAssignmentName,
                         score: parseFloat(scoreMatch[1]),
                         total: parseFloat(scoreMatch[2]),
@@ -478,8 +538,8 @@ document.addEventListener('DOMContentLoaded', () => {
             progressBar.style.transform = 'scaleX(0.3)';
             await new Promise(resolve => setTimeout(resolve, 100));
             
-            assignments = parseCanvasGrades(textarea.value);
-            console.log('Parsed assignments:', assignments);
+            parseCanvasGrades(textarea.value);
+            console.log('Parsed assignments:', courses[currentCourse].assignments);
             
             progressBar.style.transform = 'scaleX(0.6)';
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -523,9 +583,9 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         row.querySelector('.delete-btn').addEventListener('click', () => {
-            const index = assignments.indexOf(assignment);
+            const index = courses[currentCourse].assignments.indexOf(assignment);
             if (index > -1) {
-                assignments.splice(index, 1); // Remove from assignments array
+                courses[currentCourse].assignments.splice(index, 1); // Remove from assignments array
             }
             row.remove();
             calculateTotal();
@@ -578,10 +638,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         container.innerHTML = '';
 
-        const uniqueCategories = [...new Set(assignments.map(a => a.category))];
+        const uniqueCategories = [...new Set(courses[currentCourse].assignments.map(a => a.category))];
 
         uniqueCategories.forEach(category => {
-            const categoryAssignments = assignments.filter(a => a.category === category);
+            const categoryAssignments = courses[currentCourse].assignments.filter(a => a.category === category);
             const categoryData = {
                 totalScore: categoryAssignments.reduce((sum, a) => sum + a.score, 0),
                 totalPoints: categoryAssignments.reduce((sum, a) => sum + a.total, 0),
@@ -653,7 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dropZone.classList.add('drag-over');
             });
 
-            dropZone.addEventListener('dragleave', (e) => {
+            dropZone.addEventListener('dragleave', () => {
                 dropZone.classList.remove('drag-over');
             });
 
@@ -665,7 +725,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newCategory = dropZone.dataset.category;
                 
                 // Find the assignment and update its category
-                const assignment = assignments.find(a => a.name === assignmentName);
+                const assignment = courses[currentCourse].assignments.find(a => a.name === assignmentName);
                 if (assignment && assignment.category !== newCategory) {
                     // Update only the category, keep other properties unchanged
                     assignment.category = newCategory;
@@ -690,7 +750,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Helper function to calculate category grade
     function calculateCategoryGrade(category) {
-        const categoryAssignments = assignments.filter(a => a.category === category);
+        const categoryAssignments = courses[currentCourse].assignments.filter(a => a.category === category);
         if (categoryAssignments.length === 0) return 0;
         
         const totalScore = categoryAssignments.reduce((sum, a) => sum + a.score, 0);
@@ -706,7 +766,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="modal-content">
                 <h2>Add New Assignment</h2>
                 <select id="categorySelect">
-                    ${Array.from(new Set(assignments.map(a => a.category))).map(category => `<option value="${category}">${category}</option>`).join('')}
+                    ${Array.from(new Set(courses[currentCourse].assignments.map(a => a.category))).map(category => `<option value="${category}">${category}</option>`).join('')}
                 </select>
                 <input type="text" id="assignmentName" placeholder="Assignment Name">
                 <input type="number" id="assignmentScore" placeholder="Score" min="0">
@@ -733,7 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     total: total,
                     category: category
                 };
-                assignments.push(assignment);
+                courses[currentCourse].assignments.push(assignment);
                 trackGradeChange(assignment, 0, score);
                 calculateTotal();
                 updateCategorySummaries(true);
@@ -746,10 +806,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update the removeAssignment function
     window.removeAssignment = function(name) {
-        const assignment = assignments.find(a => a.name === name);
+        const assignment = courses[currentCourse].assignments.find(a => a.name === name);
         if (!assignment) return;
         
-        assignments = assignments.filter(a => a.name !== name);
+        courses[currentCourse].assignments = courses[currentCourse].assignments.filter(a => a.name !== name);
         calculateTotal();
         updateCategorySummaries(true);
         updateAnalytics();
@@ -757,7 +817,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update the editAssignment function to use the assignment name instead of index
     window.editAssignment = function(assignmentName) {
-        const assignment = assignments.find(a => a.name === assignmentName);
+        const assignment = courses[currentCourse].assignments.find(a => a.name === assignmentName);
         if (!assignment) {
             console.error('Assignment not found:', assignmentName);
             return;
@@ -811,7 +871,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getRemainingAssignmentsHTML() {
         // Get assignments with no scores
-        const remaining = assignments.filter(a => !a.score || a.score === 0);
+        const remaining = courses[currentCourse].assignments.filter(a => !a.score || a.score === 0);
         return remaining.map(a => `
             <div class="scenario-assignment">
                 <span>${a.name}</span>
@@ -827,7 +887,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function calculateProjectedGrade(scenarioScores) {
         // Create a deep copy of current assignments
-        const projectedAssignments = assignments.map(a => ({...a}));
+        const projectedAssignments = courses[currentCourse].assignments.map(a => ({...a}));
         
         // Apply scenario scores
         scenarioScores.forEach(score => {
@@ -842,7 +902,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateMinimumNeeded(targetGrade = 90) {
-        const remaining = assignments.filter(a => !a.score || a.score === 0);
+        const remaining = courses[currentCourse].assignments.filter(a => !a.score || a.score === 0);
         if (remaining.length === 0) return 0;
         
         const totalRemainingPoints = remaining.reduce((sum, a) => sum + a.total, 0);
@@ -860,7 +920,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('newScenario').addEventListener('click', createScenario);
 
     document.getElementById('scenarioSelect').addEventListener('change', (e) => {
-        const scenario = scenarios.find(s => s.id === e.target.value);
+        const scenario = courses[currentCourse].scenarios.find(s => s.id === e.target.value);
         if (scenario) {
             const projected = calculateProjectedGrade(scenario.scores);
             document.getElementById('projectedGrade').textContent = 
@@ -889,7 +949,7 @@ document.addEventListener('DOMContentLoaded', () => {
             created: new Date()
         };
         
-        scenarios.push(scenario);
+        courses[currentCourse].scenarios.push(scenario);
         updateScenarioSelect();
         updatePredictions();
         
@@ -901,8 +961,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('minGradeNeeded').textContent = 
             minNeeded === 0 ? 'Target achieved!' : `${minNeeded.toFixed(2)}%`;
         
-        if (scenarios.length > 0) {
-            const latestScenario = scenarios[scenarios.length - 1];
+        if (courses[currentCourse].scenarios.length > 0) {
+            const latestScenario = courses[currentCourse].scenarios[courses[currentCourse].scenarios.length - 1];
             const projected = calculateProjectedGrade(latestScenario.scores);
             document.getElementById('projectedGrade').textContent = 
                 `${projected.toFixed(2)}% (${getLetterGrade(projected)})`;
@@ -912,7 +972,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateScenarioSelect() {
         const select = document.getElementById('scenarioSelect');
         select.innerHTML = '<option value="">Select Scenario</option>' +
-            scenarios.map(s => `
+            courses[currentCourse].scenarios.map(s => `
                 <option value="${s.id}">${s.name}</option>
             `).join('');
     }
@@ -1088,4 +1148,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add this to your DOMContentLoaded event listener
     initializeGradeChart();
+
+    // Add course selection UI
+    const courseManagement = document.createElement('div');
+    courseManagement.className = 'course-management';
+    courseManagement.innerHTML = `
+        <div class="course-controls">
+            <select id="courseSelect" class="form-control">
+                <option value="">Select a Course</option>
+            </select>
+            <button id="addCourse" class="btn btn-primary">Add Course</button>
+        </div>
+    `;
+    
+    document.querySelector('.container').insertBefore(
+        courseManagement,
+        document.querySelector('.container').firstChild
+    );
+
+    // Add course management event listeners
+    document.getElementById('addCourse').addEventListener('click', () => {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Add New Course</h2>
+                <div class="form-group">
+                    <label for="courseName">Course Name:</label>
+                    <input type="text" id="courseName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="courseScale">Grading Scale:</label>
+                    <select id="courseScale" class="form-control">
+                        <option value="all">Standard (A, A-, B+, etc.)</option>
+                        <option value="noMinus">No Minus (A, B+, B, etc.)</option>
+                        <option value="simple">Simple (A, B, C, D, F)</option>
+                    </select>
+                </div>
+                <div class="modal-buttons">
+                    <button id="saveCourse" class="btn btn-primary">Save</button>
+                    <button id="cancelCourse" class="btn btn-secondary">Cancel</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        modal.querySelector('#saveCourse').addEventListener('click', () => {
+            const name = modal.querySelector('#courseName').value.trim();
+            const scale = modal.querySelector('#courseScale').value;
+            
+            if (name) {
+                createNewCourse(name, scale);
+                document.body.removeChild(modal);
+            }
+        });
+        
+        modal.querySelector('#cancelCourse').addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+    });
+
+    document.getElementById('courseSelect').addEventListener('change', (e) => {
+        if (e.target.value) {
+            switchCourse(e.target.value);
+        }
+    });
 });
