@@ -508,27 +508,6 @@ function trackGradeChange(assignment, oldScore, newScore) {
     updateAnalytics();
 }
 
-function initializeCategoryManagement() {
-    const categorySummaries = document.getElementById('categorySummaries');
-    const sidebar = document.getElementById('categorySidebar');
-    
-    // Create and add the manage categories button
-    const manageCategoriesBtn = document.createElement('button');
-    manageCategoriesBtn.textContent = 'Manage Categories';
-    manageCategoriesBtn.className = 'manage-categories-btn';
-    categorySummaries.parentElement.insertBefore(manageCategoriesBtn, categorySummaries);
-    
-    // Sidebar controls
-    manageCategoriesBtn.addEventListener('click', () => {
-        sidebar.classList.add('open');
-        updateCategoryList();
-    });
-    
-    document.getElementById('closeSidebar').addEventListener('click', () => {
-        sidebar.classList.remove('open');
-    });
-}
-
 function updateAssignmentDropdowns() {
     // Update all assignment category dropdowns
     const categoryDropdowns = document.querySelectorAll('select[data-field="category"]');
@@ -547,10 +526,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalGradeSpan = document.getElementById('totalGrade');
     const newScenarioBtn = document.getElementById('newScenario');
 
-    // Initialize category management
-    initializeCategoryManagement();
-    
-    // Add category button event listener
     document.getElementById('addCategory').addEventListener('click', createCategory);
 
     function createScenario() {
