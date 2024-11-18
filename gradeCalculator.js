@@ -518,25 +518,40 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('processPaste').addEventListener('click', async () => {
         const button = document.getElementById('processPaste');
         const textarea = document.getElementById('canvasPaste');
-
-        if (!textarea.value) {
-            alert('Please paste your Canvas grades first!');
-            return;
+        const progressBar = document.createElement('div');
+        
+        // Ensure there's a current course before processing
+        function ensureDefaultCourse() {
+            if (!currentCourse || !courses[currentCourse]) {
+                createNewCourse('Default Course', 'all');
+            }
         }
 
+        // Initialize with a default course
+        ensureDefaultCourse();
+        
+        if (!textarea.value.trim()) {
+            alert('Please paste Canvas grades first');
+            return;
+        }
+        
         // Add loading state
         button.classList.add('loading');
         button.disabled = true;
         button.textContent = 'Processing...';
         
         // Add progress bar
-        const progressBar = document.createElement('div');
         progressBar.className = 'progress-bar';
         button.parentElement.appendChild(progressBar);
         
         try {
             progressBar.style.transform = 'scaleX(0.3)';
             await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Make sure we have a current course
+            if (!currentCourse || !courses[currentCourse]) {
+                throw new Error('No course selected. Please create or select a course first.');
+            }
             
             parseCanvasGrades(textarea.value);
             console.log('Parsed assignments:', courses[currentCourse].assignments);
@@ -556,9 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await new Promise(resolve => setTimeout(resolve, 1000));
         } catch (error) {
             console.error('Error processing grades:', error);
-            button.classList.remove('loading');
-            button.classList.add('highlight-error');
-            button.textContent = 'Error processing grades';
+            alert('Error processing grades: ' + error.message);
         } finally {
             setTimeout(() => {
                 button.disabled = false;
